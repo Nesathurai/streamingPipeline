@@ -54,7 +54,7 @@ const char *get_error_text()
 #endif
 }
 #define MAXTRANSMIT 4096
-#define PORT 8080
+#define PORT 8090
 
 constexpr float voxel_size = 0.01;
 constexpr int block_count = 10000;
@@ -69,6 +69,7 @@ std::mutex img_lock;
 pthread_mutex_t fileMutex;
 
 bool enableDebugging = 0;
+bool enableRender = 0;
 char ipAddress[255] = "sc-4.arena.andrew.cmu.edu";
 
 int server_fd, new_socket, valread;
@@ -189,7 +190,7 @@ void transmitData(open3d::geometry::TriangleMesh *inOpen3d, int counter)
     if (!pthread_mutex_trylock(&fileMutex))
     {
         draco::EncoderBuffer meshBuffer;
-        char buffer[1024] = {0};
+        char buffer[MAXTRANSMIT] = {0};
 
         open3d_to_draco(inOpen3d, &meshBuffer);
 
@@ -199,7 +200,7 @@ void transmitData(open3d::geometry::TriangleMesh *inOpen3d, int counter)
             sprintf(buffer, "%ld", meshBuffer.size());
             int response;
             // printf("(%d) server: transfer started; return: %d\n", counter, response);
-            response = send(new_socket, buffer, 1024, 0);
+            response = send(new_socket, buffer, MAXTRANSMIT, 0);
             // printf("(%d) send: %d\n", counter, response);
 
             // connection established, start transmitting
@@ -284,20 +285,12 @@ void UpdateSingleMesh(std::shared_ptr<visualization::visualizer::O3DVisualizer> 
         // mesh = mesh.SimplifyQuadricDecimation(0.8, false);
         // std::cout << "passes decimation" << std::endl;
 
-
         // convert from tensor to legacy (regular triangle mesh)
         geometry::TriangleMesh legacyMesh;
         legacyMesh = mesh.ToLegacy();
 
         // transmit data
         transmitData(&legacyMesh, counter);
-        
-        // char outPath[1024] = {0};
-        // sprintf(outPath, "/home/sc/ws/reconstruction/meshes/capture%d.obj",counter);
-
-        // open3d::t::io::WriteTriangleMesh("/home/sc/ws/reconstruction/meshes/capture0.obj", legacyMesh, false, false, true, false, false, false);
-        // open3d::io::WriteTriangleMesh(outPath, legacyMesh, false, false, true, false, false, false);
-        // std::cout << "wrote to file (for testing purposes): " << counter << std::endl;
         counter++;
     }
 }
@@ -422,13 +415,11 @@ int main(int argc, char **argv)
     auto &o3d_app = visualization::gui::Application::GetInstance();
     o3d_app.Initialize("/home/sc/Open3D-0.16.0/build/bin/resources");
     auto visualizer = std::make_shared<visualization::visualizer::O3DVisualizer>("visualization", 3840, 2160);
+
     Eigen::Vector4f bg_color = {1.0, 1.0, 1.0, 1.0};
     visualizer->SetBackground(bg_color);
     visualizer->ShowSettings(true);
     visualizer->ResetCameraToDefault();
-
-    // visualization::gui::Application::GetInstance().Initialize();
-    // visualization::gui::Application::GetInstance().Run();
     visualization::gui::Application::GetInstance().AddWindow(visualizer);
 
     ///////////////////////////
@@ -483,6 +474,7 @@ int main(int argc, char **argv)
     // std::thread update_thread(UpdateMultiMesh, visualizer, &color_img_list, &depth_img_list, &cv_color_img_list, &cv_depth_img_list);
 
     o3d_app.Run();
+    
     update_thread.join();
 
     // closing the connected socket
