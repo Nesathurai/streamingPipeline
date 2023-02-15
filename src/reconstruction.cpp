@@ -31,6 +31,7 @@
 #include "draco/io/obj_encoder.h"
 #include "utils.h"
 #include "open3d/Open3D.h"
+#include "circularBuffer.hpp"
 
 using namespace open3d;
 const char *get_error_text()
@@ -55,6 +56,38 @@ const char *get_error_text()
 }
 #define MAXTRANSMIT 4096
 #define PORT 8090
+#define NUM_THREADS 2
+
+typedef struct
+{
+    int port;
+    int id;
+} args_t;
+
+typedef struct
+{
+    MultiKinectCapture *multi_cap;
+    std::vector<t::geometry::Image> *color_img_list;
+    std::vector<t::geometry::Image> *depth_img_list;
+    std::vector<cv::Mat> *cv_color_img_list;
+    std::vector<cv::Mat> *cv_depth_img_list;
+    int id;
+} start_cam_args_t;
+
+typedef struct
+{
+    open3d::geometry::TriangleMesh *inOpen3d;
+    int counter;
+    int port;
+    int id;
+} transmit_args_t;
+
+typedef struct
+{
+    std::vector<t::geometry::Image> *color_img_list;
+    std::vector<t::geometry::Image> *depth_img_list;
+    int id;
+} generateMesh_args_t;
 
 constexpr float voxel_size = 0.01;
 constexpr int block_count = 10000;
@@ -66,7 +99,7 @@ static std::vector<core::Tensor> intrinsic_list;
 
 uint32_t device_count = 1;
 std::mutex img_lock;
-pthread_mutex_t fileMutex;
+pthread_mutex_t meshMutex;
 
 bool enableDebugging = 0;
 bool enableRender = 0;
@@ -74,6 +107,16 @@ char ipAddress[255] = "sc-4.arena.andrew.cmu.edu";
 
 int server_fd, new_socket, valread;
 struct sockaddr_in address;
+
+circular_buffer<open3d::geometry::TriangleMesh, 10> meshes;
+
+open3d::geometry::TriangleMesh transmitMesh;
+
+// Declaration of thread condition variable
+pthread_cond_t cond1 = PTHREAD_COND_INITIALIZER;
+
+// declaring mutex
+pthread_mutex_t lock1 = PTHREAD_MUTEX_INITIALIZER;
 
 int open3d_to_draco(open3d::geometry::TriangleMesh *inOpen3d, draco::EncoderBuffer *outDracoBuffer)
 {
@@ -187,47 +230,119 @@ int open3d_to_draco(open3d::geometry::TriangleMesh *inOpen3d, draco::EncoderBuff
 
 void transmitData(open3d::geometry::TriangleMesh *inOpen3d, int counter)
 {
-    if (!pthread_mutex_trylock(&fileMutex))
+
+    draco::EncoderBuffer meshBuffer;
+    char buffer[MAXTRANSMIT] = {0};
+
+    open3d_to_draco(inOpen3d, &meshBuffer);
+
+    if ((meshBuffer.size() > 12))
     {
-        draco::EncoderBuffer meshBuffer;
-        char buffer[MAXTRANSMIT] = {0};
+        printf("(%d) mesh buffer size: %ld\n", counter, meshBuffer.size());
+        sprintf(buffer, "%ld", meshBuffer.size());
+        int response;
+        // printf("(%d) server: transfer started; return: %d\n", counter, response);
+        response = send(new_socket, buffer, MAXTRANSMIT, 0);
+        // printf("(%d) send: %d\n", counter, response);
 
-        open3d_to_draco(inOpen3d, &meshBuffer);
+        // connection established, start transmitting
+        char outBuffer[meshBuffer.size()] = {0};
+        copy(meshBuffer.buffer()->begin(), meshBuffer.buffer()->end(), outBuffer);
 
-        if ((meshBuffer.size() > 12))
+        int seek = 0;
+        int toTransfer = meshBuffer.size();
+
+        while (toTransfer >= MAXTRANSMIT)
         {
-            printf("(%d) mesh buffer size: %ld\n", counter, meshBuffer.size());
-            sprintf(buffer, "%ld", meshBuffer.size());
-            int response;
-            // printf("(%d) server: transfer started; return: %d\n", counter, response);
-            response = send(new_socket, buffer, MAXTRANSMIT, 0);
+            response = send(new_socket, outBuffer + seek, MAXTRANSMIT, 0);
+            toTransfer -= MAXTRANSMIT;
+            seek += MAXTRANSMIT;
             // printf("(%d) send: %d\n", counter, response);
-
-            // connection established, start transmitting
-            char outBuffer[meshBuffer.size()] = {0};
-            copy(meshBuffer.buffer()->begin(), meshBuffer.buffer()->end(), outBuffer);
-
-            int seek = 0;
-            int toTransfer = meshBuffer.size();
-
-            while (toTransfer >= MAXTRANSMIT)
-            {
-                response = send(new_socket, outBuffer + seek, MAXTRANSMIT, 0);
-                toTransfer -= MAXTRANSMIT;
-                seek += MAXTRANSMIT;
-                // printf("(%d) send: %d\n", counter, response);
-                // printf("(%d) Last error was: %s\n", counter, get_error_text());
-            }
-            response = send(new_socket, outBuffer + seek, toTransfer, 0);
-            printf("(%d) send: %d\n", counter, response);
-            printf("Last error was: %s\n", get_error_text());
+            // printf("(%d) Last error was: %s\n", counter, get_error_text());
         }
-        else
-        {
-            // size of 12 for some reason is an invalid frame
-            std::cout << "frame capture failed" << std::endl;
+        response = send(new_socket, outBuffer + seek, toTransfer, 0);
+        printf("(%d) send: %d\n", counter, response);
+        printf("Last error was: %s\n", get_error_text());
+    }
+    else
+    {
+        // size of 12 for some reason is an invalid frame
+        std::cout << "frame capture failed" << std::endl;
+    }
+}
+
+static void *transmitDataWrapper(void *data)
+{
+
+    args_t *args = (args_t *)data;
+    
+    int opt = 1;
+    int addrlen = sizeof(address);
+
+    // Creating socket file descriptor
+    if ((server_fd = socket(AF_INET, SOCK_STREAM, 0)) < 0)
+    {
+        perror("socket failed");
+        exit(EXIT_FAILURE);
+    }
+
+    // Forcefully attaching socket to the port 8080
+    if (setsockopt(server_fd, SOL_SOCKET,
+                   SO_REUSEADDR | SO_REUSEPORT, &opt,
+                   sizeof(opt)))
+    {
+        perror("setsockopt");
+        exit(EXIT_FAILURE);
+    }
+
+    struct hostent *hp;
+    hp = gethostbyname(ipAddress);
+    address.sin_family = hp->h_addrtype;
+    bcopy((char *)hp->h_addr, (char *)&address.sin_addr, hp->h_length);
+    address.sin_port = htons(PORT);
+
+    // Forcefully attaching socket to the port 8080
+    if (bind(server_fd, (struct sockaddr *)&address, sizeof(address)) < 0)
+    {
+        perror("bind failed");
+        exit(EXIT_FAILURE);
+    }
+    if (listen(server_fd, 3) < 0)
+    {
+        perror("listen");
+        exit(EXIT_FAILURE);
+    }
+    if ((new_socket = accept(server_fd, (struct sockaddr *)&address, (socklen_t *)&addrlen)) < 0)
+    {
+        perror("accept");
+        exit(EXIT_FAILURE);
+    }
+
+    int counter = 0;
+
+    // only transmit when signal is recieved
+    while (1)
+    {
+        printf("waiting to send data on thread: %d\n", args->id);
+        pthread_cond_wait(&cond1, &lock1);
+        geometry::TriangleMesh legacyMesh = meshes.get().value();
+        if(&legacyMesh != NULL){
+            transmitData(&(legacyMesh), counter);
         }
-        pthread_mutex_unlock(&fileMutex);
+        else{
+            printf("trying to send data, but mesh is null\n");
+        }
+        
+        // if (!pthread_mutex_trylock(&meshMutex))
+        // {
+        //     transmitData(&transmitMesh, counter);
+        //     pthread_mutex_unlock(&meshMutex);
+        // }
+        // else
+        // {
+        //     printf("in transmitDataWrapper, data ready to send but FAILED to acquire meshMutex lock\n");
+        // }
+        counter++;
     }
 }
 
@@ -289,10 +404,81 @@ void UpdateSingleMesh(std::shared_ptr<visualization::visualizer::O3DVisualizer> 
         geometry::TriangleMesh legacyMesh;
         legacyMesh = mesh.ToLegacy();
 
+        // transmitMesh = mesh.ToLegacy();
+
         // transmit data
         transmitData(&legacyMesh, counter);
         counter++;
     }
+}
+
+void generateMeshAndTransmit(std::vector<t::geometry::Image> *color_img_list, std::vector<t::geometry::Image> *depth_img_list)
+{
+    visualization::rendering::Material material("defaultLit");
+    material.SetDefaultProperties();
+
+    t::geometry::TriangleMesh mesh;
+    t::geometry::Image texture_img;
+
+    std::this_thread::sleep_for(std::chrono::milliseconds(2000));
+    while (1)
+    {
+        std::this_thread::sleep_for(std::chrono::milliseconds(30));
+        if (img_lock.try_lock())
+        {
+            t::geometry::VoxelBlockGrid voxel_grid({"tsdf", "weight"},
+                                                   {core::Dtype::Float32, core::Dtype::Float32},
+                                                   {{1}, {1}}, voxel_size, 16, block_count, gpu_device);
+            texture_img = color_img_list->at(0);
+            for (int i = 0; i < device_count; i++)
+            {
+                core::Tensor frustum_block_coords = voxel_grid.GetUniqueBlockCoordinates(depth_img_list->at(0), intrinsic_list.at(0),
+                                                                                         extrinsic_tf_list.at(0), depth_scale,
+                                                                                         depth_max, trunc_voxel_multiplier);
+
+                voxel_grid.Integrate(frustum_block_coords, depth_img_list->at(0), intrinsic_list.at(0), extrinsic_tf_list.at(0),
+                                     depth_scale, depth_max, trunc_voxel_multiplier);
+            }
+            img_lock.unlock();
+
+            mesh = voxel_grid.ExtractTriangleMesh(0, -1).To(cpu_device);
+            mesh.RemoveVertexAttr("normals");
+
+            mesh_uv_mapping(&(mesh), intrinsic_list.at(0), extrinsic_tf_list.at(0));
+
+            material.SetAlbedoMap(texture_img);
+            mesh.SetMaterial(material);
+        }
+
+        // decimate the mesh to save space
+        // inOpen3d->triangles_.size()
+        // mesh = mesh.SimplifyQuadricDecimation(0.8, false);
+        // std::cout << "passes decimation" << std::endl;
+
+        // convert from tensor to legacy (regular triangle mesh)
+        // use semaphore because socket thread is waiting
+
+        if (!pthread_mutex_trylock(&meshMutex))
+        {
+            transmitMesh = mesh.ToLegacy();
+            meshes.put(mesh.ToLegacy());
+            pthread_mutex_unlock(&meshMutex);
+            printf("Signaling condition variable cond1\n");
+            pthread_cond_signal(&cond1);
+        }
+        else
+        {
+            printf("in generateMeshAndTransmit acquiring meshMutex FAILED\n");
+        }
+    }
+}
+
+static void *generateMeshAndTransmitWrapper(void *data)
+{
+    // calls generate mesh and transmit (the function that grabs frames that were generated and converts to mesh)
+    generateMesh_args_t *args = (generateMesh_args_t *)data;
+    generateMeshAndTransmit(args->color_img_list, args->depth_img_list);
+    return NULL;
 }
 
 void UpdateMultiMesh(std::shared_ptr<visualization::visualizer::O3DVisualizer> visualizer, std::vector<t::geometry::Image> *color_img_list,
@@ -359,9 +545,9 @@ void UpdateMultiMesh(std::shared_ptr<visualization::visualizer::O3DVisualizer> v
     }
 }
 
-void start_cam(MultiKinectCapture *multi_cap, std::vector<t::geometry::Image> *color_img_list,
-               std::vector<t::geometry::Image> *depth_img_list,
-               std::vector<cv::Mat> *cv_color_img_list, std::vector<cv::Mat> *cv_depth_img_list)
+void startCam(MultiKinectCapture *multi_cap, std::vector<t::geometry::Image> *color_img_list,
+              std::vector<t::geometry::Image> *depth_img_list,
+              std::vector<cv::Mat> *cv_color_img_list, std::vector<cv::Mat> *cv_depth_img_list)
 {
     std::cout << "Found " << k4a_device_get_installed_count() << " connected devices" << std::endl;
 
@@ -394,27 +580,84 @@ void start_cam(MultiKinectCapture *multi_cap, std::vector<t::geometry::Image> *c
     }
 }
 
+static void *startCamWrapper(void *data)
+{
+    start_cam_args_t *start_cam_args = (start_cam_args_t *)data;
+    startCam(start_cam_args->multi_cap, start_cam_args->color_img_list, start_cam_args->depth_img_list, start_cam_args->cv_color_img_list, start_cam_args->cv_depth_img_list);
+    return NULL;
+}
+
 int main(int argc, char **argv)
 {
-    std::vector<t::geometry::Image> color_img_list(device_count);
-    std::vector<t::geometry::Image> depth_img_list(device_count);
-    std::vector<cv::Mat> cv_color_img_list(device_count);
-    std::vector<cv::Mat> cv_depth_img_list(device_count);
+
+    pthread_t threads[NUM_THREADS];
+    args_t args[NUM_THREADS];
+    
+    
+
+
+    // pthread_create(&threads[0], NULL, recieve, &args[i]);
+
+    // for (int i = 0; i < NUM_THREADS; i++)
+    // {
+    //     args[i].port = PORT + i;
+    //     args[i].id = i;
+    //     pthread_create(&threads[i], NULL, recieve, &args[i]);
+    // }
+
+    // for (unsigned i = 0; i < NUM_THREADS; i++)
+    // {
+    //     pthread_join(threads[i], NULL);
+    // }
+
 
     //////////////////////////
     //     start cameras    //
     //////////////////////////
     MultiKinectCapture *multi_cap;
-    std::thread cam_thread(start_cam, multi_cap, &color_img_list, &depth_img_list,
-                           &cv_color_img_list, &cv_depth_img_list);
+    std::vector<t::geometry::Image> color_img_list(device_count);
+    std::vector<t::geometry::Image> depth_img_list(device_count);
+    std::vector<cv::Mat> cv_color_img_list(device_count);
+    std::vector<cv::Mat> cv_depth_img_list(device_count);
+    
+    start_cam_args_t start_cam_args;
+    start_cam_args.multi_cap = multi_cap;
+    start_cam_args.color_img_list = &color_img_list;
+    start_cam_args.depth_img_list = &depth_img_list;
+    start_cam_args.cv_color_img_list = &cv_color_img_list;
+    start_cam_args.cv_depth_img_list = &cv_depth_img_list;
+    start_cam_args.id = 0;
+    pthread_create(&threads[0], NULL, startCamWrapper, &start_cam_args);
+
+    ///////////////////////////
+    // create server socket  //
+    ///////////////////////////
+    transmit_args_t transmit_args;
+    transmit_args.port = PORT;
+    transmit_args.id = 1;
+    pthread_create(&threads[1], NULL, transmitDataWrapper, &transmit_args);
+
+    ///////////////////////////
+    // get new frames, mesh  //
+    ///////////////////////////
+    generateMesh_args_t generateMesh_args;
+    generateMesh_args.color_img_list = &color_img_list;
+    generateMesh_args.depth_img_list = &depth_img_list;
+    generateMesh_args.id = 2;
+    pthread_create(&threads[2], NULL, generateMeshAndTransmitWrapper, &generateMesh_args);
+
+    // std::thread cam_thread(start_cam, multi_cap, &color_img_list, &depth_img_list,
+    //                        &cv_color_img_list, &cv_depth_img_list);
 
     //////////////////////////
     // visualization window //
     //////////////////////////
     // to reset display output: export DISPLAY=":0.0"
-    auto &o3d_app = visualization::gui::Application::GetInstance();
+    // auto &o3d_app = visualization::gui::Application::GetInstance();
+    visualization::gui::Application &o3d_app = visualization::gui::Application::GetInstance();
     o3d_app.Initialize("/home/sc/Open3D-0.16.0/build/bin/resources");
-    auto visualizer = std::make_shared<visualization::visualizer::O3DVisualizer>("visualization", 3840, 2160);
+    // auto visualizer = std::make_shared<visualization::visualizer::O3DVisualizer>("visualization", 3840, 2160);
+    std::shared_ptr<visualization::visualizer::O3DVisualizer> visualizer = std::make_shared<visualization::visualizer::O3DVisualizer>("visualization", 3840, 2160);
 
     Eigen::Vector4f bg_color = {1.0, 1.0, 1.0, 1.0};
     visualizer->SetBackground(bg_color);
@@ -422,60 +665,57 @@ int main(int argc, char **argv)
     visualizer->ResetCameraToDefault();
     visualization::gui::Application::GetInstance().AddWindow(visualizer);
 
-    ///////////////////////////
-    // create server socket  //
-    ///////////////////////////
-    int opt = 1;
-    int addrlen = sizeof(address);
+    
+    // int opt = 1;
+    // int addrlen = sizeof(address);
 
-    // Creating socket file descriptor
-    if ((server_fd = socket(AF_INET, SOCK_STREAM, 0)) < 0)
-    {
-        perror("socket failed");
-        exit(EXIT_FAILURE);
-    }
+    // // Creating socket file descriptor
+    // if ((server_fd = socket(AF_INET, SOCK_STREAM, 0)) < 0)
+    // {
+    //     perror("socket failed");
+    //     exit(EXIT_FAILURE);
+    // }
 
-    // Forcefully attaching socket to the port 8080
-    if (setsockopt(server_fd, SOL_SOCKET,
-                   SO_REUSEADDR | SO_REUSEPORT, &opt,
-                   sizeof(opt)))
-    {
-        perror("setsockopt");
-        exit(EXIT_FAILURE);
-    }
+    // // Forcefully attaching socket to the port 8080
+    // if (setsockopt(server_fd, SOL_SOCKET,
+    //                SO_REUSEADDR | SO_REUSEPORT, &opt,
+    //                sizeof(opt)))
+    // {
+    //     perror("setsockopt");
+    //     exit(EXIT_FAILURE);
+    // }
 
-    struct hostent *hp;
-    hp = gethostbyname(ipAddress);
-    address.sin_family = hp->h_addrtype;
-    bcopy((char *)hp->h_addr, (char *)&address.sin_addr, hp->h_length);
-    address.sin_port = htons(PORT);
+    // struct hostent *hp;
+    // hp = gethostbyname(ipAddress);
+    // address.sin_family = hp->h_addrtype;
+    // bcopy((char *)hp->h_addr, (char *)&address.sin_addr, hp->h_length);
+    // address.sin_port = htons(PORT);
 
-    // Forcefully attaching socket to the port 8080
-    if (bind(server_fd, (struct sockaddr *)&address, sizeof(address)) < 0)
-    {
-        perror("bind failed");
-        exit(EXIT_FAILURE);
-    }
-    if (listen(server_fd, 3) < 0)
-    {
-        perror("listen");
-        exit(EXIT_FAILURE);
-    }
-    if ((new_socket = accept(server_fd, (struct sockaddr *)&address, (socklen_t *)&addrlen)) < 0)
-    {
-        perror("accept");
-        exit(EXIT_FAILURE);
-    }
+    // // Forcefully attaching socket to the port 8080
+    // if (bind(server_fd, (struct sockaddr *)&address, sizeof(address)) < 0)
+    // {
+    //     perror("bind failed");
+    //     exit(EXIT_FAILURE);
+    // }
+    // if (listen(server_fd, 3) < 0)
+    // {
+    //     perror("listen");
+    //     exit(EXIT_FAILURE);
+    // }
+    // if ((new_socket = accept(server_fd, (struct sockaddr *)&address, (socklen_t *)&addrlen)) < 0)
+    // {
+    //     perror("accept");
+    //     exit(EXIT_FAILURE);
+    // }
 
     ///////////////////////////
     // reconstruction thread //
     ///////////////////////////
-    std::thread update_thread(UpdateSingleMesh, visualizer, &color_img_list, &depth_img_list);
+    // std::thread update_thread(UpdateSingleMesh, visualizer, &color_img_list, &depth_img_list);
     // std::thread update_thread(UpdateMultiMesh, visualizer, &color_img_list, &depth_img_list, &cv_color_img_list, &cv_depth_img_list);
 
     o3d_app.Run();
-    
-    update_thread.join();
+    // update_thread.join();
 
     // closing the connected socket
     close(new_socket);

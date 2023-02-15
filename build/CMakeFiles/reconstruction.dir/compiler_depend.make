@@ -2633,7 +2633,9 @@ CMakeFiles/reconstruction.dir/src/reconstruction.cpp.o: ../src/reconstruction.cp
   /usr/local/include/draco/io/obj_encoder.h \
   /usr/local/include/draco/mesh/corner_table.h \
   /usr/local/include/draco/mesh/valence_cache.h \
-  ../include/utils.h
+  ../include/utils.h \
+  ../include/circularBuffer.hpp \
+  /usr/include/c++/11/optional
 
 CMakeFiles/reconstruction.dir/src/texture_mapping.cpp.o: ../src/texture_mapping.cpp \
   /usr/include/stdc-predef.h \
@@ -4610,6 +4612,8 @@ CMakeFiles/reconstruction.dir/src/util.cpp.o: ../src/util.cpp \
 
 /home/sc/open3d_install_0.16.0/include/open3d/utility/Helper.h:
 
+/usr/include/c++/11/optional:
+
 /usr/include/c++/11/condition_variable:
 
 /home/sc/open3d_install_0.16.0/include/open3d/geometry/MeshBase.h:
@@ -5537,6 +5541,8 @@ CMakeFiles/reconstruction.dir/src/util.cpp.o: ../src/util.cpp \
 /usr/include/c++/11/bits/atomic_base.h:
 
 /usr/include/opencv4/opencv2/core/cuda.inl.hpp:
+
+../include/circularBuffer.hpp:
 
 /usr/include/x86_64-linux-gnu/c++/11/bits/gthr-default.h:
 

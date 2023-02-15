@@ -24,8 +24,15 @@ add_executable(reconstruction
     include/cv_convert_util.hpp
 )
 
+add_executable(client
+    src/client.cpp
+)
+
 target_link_libraries(reconstruction -Wl,--whole-archive draco -Wl,--no-whole-archive
                         Open3D::Open3D
                         apriltag::apriltag
                         k4a::k4a
                         ${OpenCV_LIBS})
+
+target_link_libraries(client -Wl,--whole-archive draco -Wl,--no-whole-archive
+                        Open3D::Open3D)

@@ -129,6 +129,19 @@ reconstruction/fast:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/reconstruction.dir/build.make CMakeFiles/reconstruction.dir/build
 .PHONY : reconstruction/fast
 
+#=============================================================================
+# Target rules for targets named client
+
+# Build rule for target.
+client: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 client
+.PHONY : client
+
+# fast build rule for target.
+client/fast:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/client.dir/build.make CMakeFiles/client.dir/build
+.PHONY : client/fast
+
 src/camera_alignment.o: src/camera_alignment.cpp.o
 .PHONY : src/camera_alignment.o
 
@@ -152,6 +165,30 @@ src/camera_alignment.s: src/camera_alignment.cpp.s
 src/camera_alignment.cpp.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/reconstruction.dir/build.make CMakeFiles/reconstruction.dir/src/camera_alignment.cpp.s
 .PHONY : src/camera_alignment.cpp.s
+
+src/client.o: src/client.cpp.o
+.PHONY : src/client.o
+
+# target to build an object file
+src/client.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/client.dir/build.make CMakeFiles/client.dir/src/client.cpp.o
+.PHONY : src/client.cpp.o
+
+src/client.i: src/client.cpp.i
+.PHONY : src/client.i
+
+# target to preprocess a source file
+src/client.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/client.dir/build.make CMakeFiles/client.dir/src/client.cpp.i
+.PHONY : src/client.cpp.i
+
+src/client.s: src/client.cpp.s
+.PHONY : src/client.s
+
+# target to generate assembly for a file
+src/client.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/client.dir/build.make CMakeFiles/client.dir/src/client.cpp.s
+.PHONY : src/client.cpp.s
 
 src/kinect_capture.o: src/kinect_capture.cpp.o
 .PHONY : src/kinect_capture.o
@@ -281,10 +318,14 @@ help:
 	@echo "... depend"
 	@echo "... edit_cache"
 	@echo "... rebuild_cache"
+	@echo "... client"
 	@echo "... reconstruction"
 	@echo "... src/camera_alignment.o"
 	@echo "... src/camera_alignment.i"
 	@echo "... src/camera_alignment.s"
+	@echo "... src/client.o"
+	@echo "... src/client.i"
+	@echo "... src/client.s"
 	@echo "... src/kinect_capture.o"
 	@echo "... src/kinect_capture.i"
 	@echo "... src/kinect_capture.s"
