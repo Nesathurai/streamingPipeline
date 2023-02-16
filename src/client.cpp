@@ -81,11 +81,27 @@ int draco_to_open3d(open3d::geometry::TriangleMesh *outOpen3d, draco::EncoderBuf
 
     draco::Decoder decoder;
     std::shared_ptr<draco::Mesh> meshToSave = decoder.DecodeMeshFromBuffer(&decoderBuffer).value();
+    if (meshToSave.get() != NULL)
+    {
+        // fixes segfault
+        // printf("decoded successfully\n");
+    }
+    else
+    {
+        printf("decode FAILED\n");
+        return -1;
+    }
+
+    // needs at least two attributes: vertices and normals
+    if (meshToSave->num_attributes() <= 1)
+    {
+        printf("in draco to open3d, mesh to save num attributes is less than or equal to 1\n");
+        return -1;
+    }
 
     if (enableDebugging)
     {
         printf("mesh num attributes: %d\n", meshToSave->num_attributes());
-
         cout << "mesh number of faces: " << meshToSave->num_faces() << std::endl;
         cout << "mesh number of points: " << meshToSave->num_points() << std::endl;
 
@@ -95,12 +111,6 @@ int draco_to_open3d(open3d::geometry::TriangleMesh *outOpen3d, draco::EncoderBuf
 
         // vector to hold all vertices info
         std::cout << "draco format: " << std::endl;
-    }
-
-    // needs at least two attributes: vertices and normals
-    if (meshToSave->num_attributes() <= 1)
-    {
-        return -1;
     }
 
     std::vector<Eigen::Vector3d> allVerticesP;
@@ -481,9 +491,14 @@ static void *recieve(void *data)
         // pthread_mutex_lock(&fileMutex);
         valread = read(sock, buffer, MAXTRANSMIT);
         int toRead = atoi(buffer);
+        if (toRead == 0)
+        {
+            continue;
+        }
         printf("(%d) client toRead: %d\n", counter, toRead);
         // printf("(%d) read: %d\n", counter, valread);
 
+        // TODO: does increasing buffer size help with failed decode?
         char inBuffer[toRead] = {0};
         int totalRead = 0;
         while (toRead >= MAXTRANSMIT)
@@ -505,20 +520,25 @@ static void *recieve(void *data)
 
             // convert draco to open3d
             auto outOpen3d = std::make_shared<open3d::geometry::TriangleMesh>();
+            // open3d::geometry::TriangleMesh *outOpen3d = malloc(sizeof(open3d::geometry::TriangleMesh));
 
-            char outPath[1024] = {0};
-            // sprintf(outPath, "/home/allan/draco_encode_cpp/client/test_thread%d.ply", counter);
-            sprintf(outPath, "/home/sc/draco_encode_cpp/meshes/frame_%d.obj", counter);
-
-            // bool success = objEncoder.EncodeToFile(*(meshToSave.get()), outPath);
             bool success = draco_to_open3d(outOpen3d.get(), &inDracoBuffer);
-            pthread_cond_signal(&cond1);
-            // if (counter < 5)
-            // {
-            //     open3d::io::WriteTriangleMeshToOBJ(outPath, *outOpen3d, false, false, true, false, false, false);
-            //     printf("(%d) buffer save success: %d\n", counter, !success);
-            // }
-
+            if (success == 0)
+            {
+                meshes.put(*(outOpen3d.get()));
+                // signal that a frame has been captured to renderer
+                pthread_cond_signal(&cond1);
+                if (counter < 10)
+                {
+                    char outPath[1024] = {0};
+                    sprintf(outPath, "/home/sc/draco_encode_cpp/meshes/frame_%d.obj", counter);
+                    open3d::io::WriteTriangleMeshToOBJ(outPath, *outOpen3d, false, false, true, false, false, false);
+                    printf("(%d) buffer save success: %d\n", counter, !success);
+                }
+            }
+            else{
+                continue;
+            }
             // draw geometry (non-blocking) made from oped3d::visualization::DrawGeometries
             // if(counter % 10 == 0){
             //     // pthread_mutex_lock(&fileMutex);
@@ -539,7 +559,7 @@ static void *recieve(void *data)
     // closing visualization window
     // visualizer.DestroyVisualizerWindow();
     // closing the connected socket
-    // printf("Last error was: %s\n", get_error_text());
+    printf("Last error was: %s\n", get_error_text());
     close(client_fd);
     return NULL;
     // printf("Last error was: %s\n", get_error_text());
@@ -547,9 +567,6 @@ static void *recieve(void *data)
 
 static void *app(void *data)
 {
-
-    args_t *args = (args_t *)data;
-
     open3d::visualization::Visualizer visualizer;
     if (!visualizer.CreateVisualizerWindow("Mesh", 1600, 900, 50, 50))
     {
@@ -558,28 +575,34 @@ static void *app(void *data)
             "window.");
         return NULL;
     }
-    visualizer.GetRenderOption().point_show_normal_ = true;
+    visualizer.GetRenderOption().point_show_normal_ = false;
     visualizer.GetRenderOption().mesh_show_wireframe_ = false;
     visualizer.GetRenderOption().mesh_show_back_face_ = false;
     visualizer.BuildUtilities();
     visualizer.UpdateWindowTitle();
     open3d::visualization::ViewControl &view_control = visualizer.GetViewControl();
+    
 
     while (1)
     {
         // wait for a new frame to arrive
+        pthread_mutex_lock(&lock1);
         pthread_cond_wait(&cond1, &lock1);
+        // printf("rendering\n");
         visualizer.ClearGeometries();
         open3d::geometry::TriangleMesh legacyMesh = meshes.get().value();
-        if(&legacyMesh != NULL){
+        if (&legacyMesh != NULL)
+        {
             // visualizer.AddGeometry({legacyMesh});
             visualizer.AddGeometry({std::make_shared<open3d::geometry::TriangleMesh>(legacyMesh)});
-            visualizer.WaitEvents();            
+            // visualizer.WaitEvents();
+            visualizer.PollEvents();
         }
-        else{
+        else
+        {
             printf("trying to display data, but mesh is null\n");
         }
-        
+        pthread_mutex_unlock(&lock1);
     }
     visualizer.DestroyVisualizerWindow();
     return NULL;
@@ -588,8 +611,8 @@ static void *app(void *data)
 int main(int argc, char const *argv[])
 {
 
-    pthread_t threads[NUM_THREADS];
-    args_t args[NUM_THREADS];
+    pthread_t threads[NUM_THREADS + 1];
+    args_t args[NUM_THREADS + 1];
 
     for (int i = 0; i < NUM_THREADS; i++)
     {
@@ -598,9 +621,10 @@ int main(int argc, char const *argv[])
         pthread_create(&threads[i], NULL, recieve, &args[i]);
     }
 
-    // create visualization thread
+    pthread_create(&threads[NUM_THREADS], NULL, app, NULL);
 
-    for (unsigned i = 0; i < NUM_THREADS; i++)
+    // create visualization thread
+    for (unsigned i = 0; i < NUM_THREADS + 1; i++)
     {
         pthread_join(threads[i], NULL);
     }
