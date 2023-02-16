@@ -56,7 +56,7 @@ const char *get_error_text()
 }
 #define MAXTRANSMIT 4096
 #define PORT 8090
-#define NUM_THREADS 2
+#define NUM_THREADS 3
 
 typedef struct
 {
@@ -197,12 +197,12 @@ int open3d_to_draco(open3d::geometry::TriangleMesh *inOpen3d, draco::EncoderBuff
     // pc = maybe_mesh.value().get();
 
     // Convert compression level to speed (that 0 = slowest, 10 = fastest).
-    // const int speed = 10 - 1;
-    const int speed = 0;
+    const int speed = 10 - 1;
+    // const int speed = 0;
 
     draco::Encoder encoder;
-    encoder.SetAttributeQuantization(draco::GeometryAttribute::POSITION, 32);
-    encoder.SetAttributeQuantization(draco::GeometryAttribute::NORMAL, 32);
+    encoder.SetAttributeQuantization(draco::GeometryAttribute::POSITION, 10);
+    encoder.SetAttributeQuantization(draco::GeometryAttribute::NORMAL, 10);
     encoder.SetSpeedOptions(speed, speed);
 
     // const bool input_is_mesh = mesh && mesh->num_faces() > 0;
@@ -230,7 +230,6 @@ int open3d_to_draco(open3d::geometry::TriangleMesh *inOpen3d, draco::EncoderBuff
 
 void transmitData(open3d::geometry::TriangleMesh *inOpen3d, int counter)
 {
-
     draco::EncoderBuffer meshBuffer;
     char buffer[MAXTRANSMIT] = {0};
 
@@ -238,7 +237,7 @@ void transmitData(open3d::geometry::TriangleMesh *inOpen3d, int counter)
 
     if ((meshBuffer.size() > 12))
     {
-        printf("(%d) mesh buffer size: %ld\n", counter, meshBuffer.size());
+        printf("(%d) server to send: %ld\n", counter, meshBuffer.size());
         sprintf(buffer, "%ld", meshBuffer.size());
         int response;
         // printf("(%d) server: transfer started; return: %d\n", counter, response);
@@ -261,8 +260,8 @@ void transmitData(open3d::geometry::TriangleMesh *inOpen3d, int counter)
             // printf("(%d) Last error was: %s\n", counter, get_error_text());
         }
         response = send(new_socket, outBuffer + seek, toTransfer, 0);
-        printf("(%d) send: %d\n", counter, response);
-        printf("Last error was: %s\n", get_error_text());
+        // printf("(%d) send: %d\n", counter, response);
+        // printf("Last error was: %s\n", get_error_text());
     }
     else
     {
@@ -275,7 +274,7 @@ static void *transmitDataWrapper(void *data)
 {
 
     args_t *args = (args_t *)data;
-    
+
     int opt = 1;
     int addrlen = sizeof(address);
 
@@ -323,27 +322,21 @@ static void *transmitDataWrapper(void *data)
     // only transmit when signal is recieved
     while (1)
     {
-        printf("waiting to send data on thread: %d\n", args->id);
+        // printf("waiting to send data on thread: %d\n", args->id);
         pthread_cond_wait(&cond1, &lock1);
         geometry::TriangleMesh legacyMesh = meshes.get().value();
-        if(&legacyMesh != NULL){
+        if (&legacyMesh != NULL)
+        {
             transmitData(&(legacyMesh), counter);
         }
-        else{
+        else
+        {
             printf("trying to send data, but mesh is null\n");
         }
-        
-        // if (!pthread_mutex_trylock(&meshMutex))
-        // {
-        //     transmitData(&transmitMesh, counter);
-        //     pthread_mutex_unlock(&meshMutex);
-        // }
-        // else
-        // {
-        //     printf("in transmitDataWrapper, data ready to send but FAILED to acquire meshMutex lock\n");
-        // }
         counter++;
     }
+    // closing the connected socket
+    close(new_socket);
 }
 
 void UpdateSingleMesh(std::shared_ptr<visualization::visualizer::O3DVisualizer> visualizer, std::vector<t::geometry::Image> *color_img_list,
@@ -444,7 +437,15 @@ void generateMeshAndTransmit(std::vector<t::geometry::Image> *color_img_list, st
             mesh = voxel_grid.ExtractTriangleMesh(0, -1).To(cpu_device);
             mesh.RemoveVertexAttr("normals");
 
-            mesh_uv_mapping(&(mesh), intrinsic_list.at(0), extrinsic_tf_list.at(0));
+            // std::cout << "number of vertices before" << mesh.ToString() << std::endl;
+
+            // // char outPath[1024] = {0};
+            // // sprintf(outPath, "/home/sc/streamingPipeline/meshes/frame_%d.obj", 0);
+            // // open3d::t::io::WriteTriangleMesh(outPath, mesh, false, false, true, false, false, false);
+
+            // mesh = mesh.SimplifyQuadricDecimation(0.99, true);
+            // std::cout << "number of vertices after" << mesh.ToString() << std::endl;
+            // mesh_uv_mapping(&(mesh), intrinsic_list.at(0), extrinsic_tf_list.at(0));
 
             material.SetAlbedoMap(texture_img);
             mesh.SetMaterial(material);
@@ -452,7 +453,7 @@ void generateMeshAndTransmit(std::vector<t::geometry::Image> *color_img_list, st
 
         // decimate the mesh to save space
         // inOpen3d->triangles_.size()
-        // mesh = mesh.SimplifyQuadricDecimation(0.8, false);
+
         // std::cout << "passes decimation" << std::endl;
 
         // convert from tensor to legacy (regular triangle mesh)
@@ -461,10 +462,36 @@ void generateMeshAndTransmit(std::vector<t::geometry::Image> *color_img_list, st
         if (!pthread_mutex_trylock(&meshMutex))
         {
             transmitMesh = mesh.ToLegacy();
-            meshes.put(mesh.ToLegacy());
+            // auto abcd = std::make_shared<open3d::geometry::TriangleMesh>(transmitMesh);
+            // std::shared_ptr<draco::Mesh> meshToSave =
+            if (transmitMesh.vertices_.size() != 0)
+            {
+                
+                // meshes.put(mesh.ToLegacy());
+                
+                // std::cout << "number of vertices before " << transmitMesh.triangles_.size() << std::endl;
+
+                // char outPath[1024] = {0};
+                // sprintf(outPath, "/home/sc/streamingPipeline/meshes/frame_%d.obj", 0);
+                // open3d::t::io::WriteTriangleMesh(outPath, mesh, false, false, true, false, false, false);
+
+                std::shared_ptr<open3d::geometry::TriangleMesh> decimated = transmitMesh.SimplifyQuadricDecimation(transmitMesh.triangles_.size()/2,1000000,1.0);
+                // std::cout << "number of vertices after " << decimated->triangles_.size() << std::endl;
+
+                meshes.put(*(decimated.get()));
+
+            }
+            else
+            {
+                printf("conversion to legacy mesh FAILED\n");
+            }
+
             pthread_mutex_unlock(&meshMutex);
-            printf("Signaling condition variable cond1\n");
-            pthread_cond_signal(&cond1);
+            if (transmitMesh.vertices_.size() != 0)
+            {
+                // printf("Signaling condition variable cond1\n");
+                pthread_cond_signal(&cond1);
+            }
         }
         else
         {
@@ -592,24 +619,6 @@ int main(int argc, char **argv)
 
     pthread_t threads[NUM_THREADS];
     args_t args[NUM_THREADS];
-    
-    
-
-
-    // pthread_create(&threads[0], NULL, recieve, &args[i]);
-
-    // for (int i = 0; i < NUM_THREADS; i++)
-    // {
-    //     args[i].port = PORT + i;
-    //     args[i].id = i;
-    //     pthread_create(&threads[i], NULL, recieve, &args[i]);
-    // }
-
-    // for (unsigned i = 0; i < NUM_THREADS; i++)
-    // {
-    //     pthread_join(threads[i], NULL);
-    // }
-
 
     //////////////////////////
     //     start cameras    //
@@ -619,7 +628,7 @@ int main(int argc, char **argv)
     std::vector<t::geometry::Image> depth_img_list(device_count);
     std::vector<cv::Mat> cv_color_img_list(device_count);
     std::vector<cv::Mat> cv_depth_img_list(device_count);
-    
+
     start_cam_args_t start_cam_args;
     start_cam_args.multi_cap = multi_cap;
     start_cam_args.color_img_list = &color_img_list;
@@ -665,7 +674,6 @@ int main(int argc, char **argv)
     visualizer->ResetCameraToDefault();
     visualization::gui::Application::GetInstance().AddWindow(visualizer);
 
-    
     // int opt = 1;
     // int addrlen = sizeof(address);
 
@@ -717,10 +725,13 @@ int main(int argc, char **argv)
     o3d_app.Run();
     // update_thread.join();
 
-    // closing the connected socket
-    close(new_socket);
+    for (unsigned i = 0; i < NUM_THREADS; i++)
+    {
+        pthread_join(threads[i], NULL);
+    }
+
     // closing the listening socket
     shutdown(server_fd, SHUT_RDWR);
-    printf("Last error was: %s\n", get_error_text());
+    // printf("Last error was: %s\n", get_error_text());
     return 1;
 }

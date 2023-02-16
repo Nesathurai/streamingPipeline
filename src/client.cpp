@@ -539,7 +539,7 @@ static void *recieve(void *data)
     // closing visualization window
     // visualizer.DestroyVisualizerWindow();
     // closing the connected socket
-    printf("Last error was: %s\n", get_error_text());
+    // printf("Last error was: %s\n", get_error_text());
     close(client_fd);
     return NULL;
     // printf("Last error was: %s\n", get_error_text());
