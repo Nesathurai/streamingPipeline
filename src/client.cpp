@@ -53,7 +53,8 @@ pthread_mutex_t fileMutex;
 int sock = 0;
 int client_fd = 0;
 int enableDebugging = 0;
-char ipAddress[255] = "sc-4.arena.andrew.cmu.edu";
+// char ipAddress[255] = "sc-4.arena.andrew.cmu.edu";
+char ipAddress[255] = "169.254.125.169";
 
 // Declaration of thread condition variable
 pthread_cond_t cond1 = PTHREAD_COND_INITIALIZER;
@@ -478,11 +479,9 @@ int draco_to_open3d(open3d::geometry::TriangleMesh *outOpen3d, draco::EncoderBuf
 static void *recieve(void *data)
 {
     args_t *args = (args_t *)data;
-
     int sock = 0;
     int client_fd = 0;
     struct sockaddr_in address;
-    // char buffer[MAXTRANSMIT] = {0};
 
     // convert hostname to ip address
     struct hostent *hp;
@@ -504,38 +503,20 @@ static void *recieve(void *data)
         return NULL;
     }
 
-    // open3d::visualization::Visualizer visualizer;
-    // if (!visualizer.CreateVisualizerWindow("Mesh", 1600, 900, 50, 50))
-    // {
-    //     open3d::utility::LogWarning(
-    //         "[DrawGeometries] Failed creating OpenGL "
-    //         "window.");
-    //     return NULL;
-    // }
-    // visualizer.GetRenderOption().point_show_normal_ = true;
-    // visualizer.GetRenderOption().mesh_show_wireframe_ = false;
-    // visualizer.GetRenderOption().mesh_show_back_face_ = false;
-    // visualizer.BuildUtilities();
-    // visualizer.UpdateWindowTitle();
-    // open3d::visualization::ViewControl &view_control = visualizer.GetViewControl();
-
     // will probably break when the file is too small...
     int counter = 0;
-    int errCnt = 0;
     char buffer[MAXTRANSMIT] = {0};
     delta();
     while (1)
     {
-        // pthread_mutex_lock(&fileMutex);
-
-        int valread = read(sock, buffer, MAXTRANSMIT);
-        if ((valread != -1) && (valread == MAXTRANSMIT))
+        ssize_t valread = read(sock, buffer, MAXTRANSMIT);
+        // std::cout << buffer << std::endl;
+        if (valread == MAXTRANSMIT)
         {
-            // int toRead = atoi(buffer);
-            // long toRead = atol(buffer);
-            char *pEnd;
             // strol more robust than atoi
-            long toRead = strtol(buffer, &pEnd, 10);
+            // int totalSize;
+            long toRead = strtol(buffer, NULL, 10);
+            // totalSize = toRead;
             if (toRead < 0)
             {
                 printf("strtol failed\n");
@@ -544,70 +525,62 @@ static void *recieve(void *data)
 
             if ((toRead <= 100))
             {
-                if ((errCnt < 1))
-                {
-
-                    printf("(%d) client read %d, toRead: %ld\n", counter, valread, toRead);
-                    printf("recieved package less than 100 bytes - this should never print because its prevented server side\n");
-                }
-                errCnt++;
+                printf("(%d) client read %ld, toRead: %ld\n", counter, valread, toRead);
+                printf("recieved package less than 100 bytes - this should never print because its prevented server side\n");
                 continue;
             }
             printf("(%d) client toRead: %ld\n", counter, toRead);
             // printf("(%d) read: %d\n", counter, valread);
 
             char inBuffer[toRead] = {0};
-            int totalRead = 0;
-            while (toRead >= MAXTRANSMIT)
+            ssize_t totalRead = 0;
+            while (toRead > 0)
             {
-                // returns -1 if there is an error
-                valread = read(sock, (inBuffer + totalRead), MAXTRANSMIT);
+                if (toRead > MAXTRANSMIT)
+                {
+                    valread = read(sock, (inBuffer + totalRead), MAXTRANSMIT);
+                }
+                else
+                {
+                    valread = read(sock, (inBuffer + totalRead), toRead);
+                }
+
                 if (valread == -1)
                 {
-                    // printf("valread = -1 -> socket error\n");
+                    printf("valread = -1 -> socket error\n");
                     break;
                 }
                 totalRead += valread;
                 toRead -= valread;
                 // printf("(%d) read: %d toRead: %d\n", counter, valread, toRead);
             }
-            if (valread != -1)
+
+            if (toRead == 0)
             {
-                valread = read(sock, (inBuffer + totalRead), toRead);
-                // ensure last transmission was valid
-                if (valread != -1)
+                draco::EncoderBuffer inDracoBuffer;
+                inDracoBuffer.buffer()->insert(inDracoBuffer.buffer()->end(), &inBuffer[0], &inBuffer[totalRead]);
+
+                // convert draco to open3d
+                std::shared_ptr<open3d::geometry::TriangleMesh> outOpen3d = std::make_shared<open3d::geometry::TriangleMesh>();
+
+                bool success = draco_to_open3d(outOpen3d.get(), &inDracoBuffer);
+                if (success == 0)
                 {
-                    totalRead += valread;
-                    toRead -= valread;
-                    // printf("(%d) read: %d toRead: %d\n", counter, valread, toRead);
-                    if (counter > 1)
+                    meshes.put(*(outOpen3d.get()));
+                    // signal that a frame has been captured to renderer
+                    pthread_cond_signal(&cond1);
+                    if (counter < 10)
                     {
-                        draco::EncoderBuffer inDracoBuffer;
-                        inDracoBuffer.buffer()->insert(inDracoBuffer.buffer()->end(), &inBuffer[0], &inBuffer[totalRead]);
-
-                        // convert draco to open3d
-                        std::shared_ptr<open3d::geometry::TriangleMesh> outOpen3d = std::make_shared<open3d::geometry::TriangleMesh>();
-
-                        bool success = draco_to_open3d(outOpen3d.get(), &inDracoBuffer);
-                        if (success == 0)
-                        {
-                            meshes.put(*(outOpen3d.get()));
-                            // signal that a frame has been captured to renderer
-                            pthread_cond_signal(&cond1);
-                            if (counter < 10)
-                            {
-                                char outPath[1024] = {0};
-                                sprintf(outPath, "/home/sc/streamingPipeline/meshes/frame_%d.obj", counter);
-                                open3d::io::WriteTriangleMeshToOBJ(outPath, *outOpen3d, false, false, true, false, false, false);
-                                // printf("(%d) buffer save success: %d\n", counter, !success);
-                            }
-                        }
-                        else
-                        {
-                            continue;
-                        }
+                        char outPath[1024] = {0};
+                        sprintf(outPath, "/home/sc/streamingPipeline/meshes/frame_%d.obj", counter);
+                        open3d::io::WriteTriangleMeshToOBJ(outPath, *outOpen3d, false, false, true, false, false, false);
+                        // printf("(%d) buffer save success: %d\n", counter, !success);
                     }
                     counter++;
+                }
+                else
+                {
+                    continue;
                 }
             }
             else
@@ -617,13 +590,14 @@ static void *recieve(void *data)
         }
         else
         {
-            printf("valread = -1 or did not read MAXTRANSMIT -> socket error 3\n");
-            // break;
+            long toRead = strtol(buffer, NULL, 10);
+            printf("valread = %ld -> toRead = %ld socket error 3\n", valread, toRead);
+            break;
         }
         delta("frame arrival period");
         // pthread_mutex_unlock(&fileMutex);
     }
-    
+
     // closing visualization window
     // visualizer.DestroyVisualizerWindow();
     // closing the connected socket
@@ -657,9 +631,9 @@ static void *app(void *data)
         pthread_cond_wait(&cond1, &lock1);
         // printf("rendering\n");
         visualizer.ClearGeometries();
-        open3d::geometry::TriangleMesh legacyMesh = meshes.get().value();
-        if (&legacyMesh != NULL)
+        if (meshes.empty() == false)
         {
+            open3d::geometry::TriangleMesh legacyMesh = meshes.get().value();
             // visualizer.AddGeometry({legacyMesh});
             visualizer.AddGeometry({std::make_shared<open3d::geometry::TriangleMesh>(legacyMesh)});
             // visualizer.WaitEvents();

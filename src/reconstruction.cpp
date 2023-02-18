@@ -54,7 +54,7 @@ const char *get_error_text()
 
 #endif
 }
-#define MAXTRANSMIT 1500 
+#define MAXTRANSMIT 1500
 #define PORT 60000
 #define NUM_THREADS 3
 
@@ -138,7 +138,8 @@ pthread_mutex_t meshMutex;
 
 bool enableDebugging = 0;
 bool enableRender = 0;
-char ipAddress[255] = "sc-4.arena.andrew.cmu.edu";
+// char ipAddress[255] = "sc-4.arena.andrew.cmu.edu";
+char ipAddress[255] = "169.254.125.169";
 
 int server_fd, new_socket, valread;
 struct sockaddr_in address;
@@ -149,13 +150,11 @@ open3d::geometry::TriangleMesh transmitMesh;
 
 // Declaration of thread condition variable
 pthread_cond_t cond1 = PTHREAD_COND_INITIALIZER;
-
 // declaring mutex
 pthread_mutex_t lock1 = PTHREAD_MUTEX_INITIALIZER;
 
 int open3d_to_draco(open3d::geometry::TriangleMesh *inOpen3d, draco::EncoderBuffer *outDracoBuffer)
 {
-
     draco::Mesh *open3dToDracoMesh = new draco::Mesh();
     open3dToDracoMesh->set_num_points((uint32_t)inOpen3d->vertices_.size());
     open3dToDracoMesh->SetNumFaces(inOpen3d->triangles_.size());
@@ -292,42 +291,34 @@ void transmitData(open3d::geometry::TriangleMesh *inOpen3d, int counter)
             }
 
             // printf("(%d) server: transfer started; return: %d\n", counter, valsent);
-            int valsent = send(new_socket, buffer, MAXTRANSMIT, 0);
-            if ((valsent != -1) && (valsent == MAXTRANSMIT))
+            ssize_t valsent = send(new_socket, buffer, MAXTRANSMIT, 0);
+            if (valsent == MAXTRANSMIT)
             {
+                int totalSent = 0;
+                int toTransfer = meshBuffer.size();
                 // connection established, start transmitting
                 char outBuffer[meshBuffer.size()] = {0};
-                copy(meshBuffer.buffer()->begin(), meshBuffer.buffer()->end(), outBuffer);
+                auto result = copy(meshBuffer.buffer()->begin(), meshBuffer.buffer()->end(), outBuffer);
+                // check that the copy was successful
+                assert(result - outBuffer == meshBuffer.buffer()->end() - meshBuffer.buffer()->begin());
 
-                int seek = 0;
-                int toTransfer = meshBuffer.size();
-
-                while (toTransfer >= MAXTRANSMIT)
+                while (toTransfer > 0)
                 {
-                    valsent = send(new_socket, outBuffer + seek, MAXTRANSMIT, 0);
-                    if (valsent != -1)
+                    if (toTransfer > MAXTRANSMIT)
                     {
-                        toTransfer -= valsent;
-                        seek += valsent;
-                        continue;
+                        valsent = send(new_socket, outBuffer + totalSent, MAXTRANSMIT, 0);
                     }
                     else
+                    {
+                        valsent = send(new_socket, outBuffer + totalSent, toTransfer, 0);
+                    }
+                    if(valsent == -1)
                     {
                         printf("valsent = -1 -> socket error 2\n");
                         return;
                     }
-                    // printf("(%d) send: %d\n", counter, valsent);
-                    // printf("(%d) Last error was: %s\n", counter, get_error_text());
-                }
-                // if second last transmission succeeded
-                if (valsent != -1)
-                {
-                    valsent = send(new_socket, outBuffer + seek, toTransfer, 0);
-                }
-                else
-                {
-                    printf("valsent = -1 -> socket error 3\n");
-                    return;
+                    toTransfer -= valsent;
+                    totalSent += valsent;
                 }
             }
             else
@@ -476,13 +467,12 @@ void generateMeshAndTransmit(std::vector<t::geometry::Image> *color_img_list, st
                 // char outPath[1024] = {0};
                 // sprintf(outPath, "/home/sc/streamingPipeline/meshes/frame_%d.obj", 0);
                 // open3d::t::io::WriteTriangleMesh(outPath, mesh, false, false, true, false, false, false);
-                
+
                 // these 4 make basically no difference
                 // transmitMesh.RemoveDuplicatedVertices();
                 // transmitMesh.RemoveDuplicatedTriangles();
                 // transmitMesh.RemoveDegenerateTriangles();
                 // transmitMesh.RemoveNonManifoldEdges();
-
 
                 std::shared_ptr<open3d::geometry::TriangleMesh> decimated = transmitMesh.SimplifyVertexClustering(0.15);
                 // decimated = decimated->SimplifyQuadricDecimation(0.5*decimated->triangles_.size(), 1000000000, 1.0);
