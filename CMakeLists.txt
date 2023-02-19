@@ -37,7 +37,7 @@ target_link_libraries(client -Wl,--whole-archive draco -Wl,--no-whole-archive
 
 target_compile_options(client PUBLIC
   #"-Werror" # Do not comment this out after Project 8!
-  "-ggdb"
+  #"-ggdb"
   "-O3"
   #"-Wunreachable-code"
   #"-g"
@@ -61,7 +61,7 @@ target_compile_options(client PUBLIC
 
   target_compile_options(reconstruction PUBLIC
   #"-Werror" # Do not comment this out after Project 8!
-  "-ggdb"
+  #"-ggdb"
   "-O3"
   #"-Wunreachable-code"
   #"-g"
