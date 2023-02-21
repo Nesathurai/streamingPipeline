@@ -124,9 +124,9 @@ typedef struct
     int id;
 } generateMesh_args_t;
 
-constexpr float voxel_size = 0.01;
+constexpr float voxel_size = 0.011; // default 0.01
 constexpr int block_count = 10000;
-constexpr float depth_max = 5.0;
+constexpr float depth_max = 5.0; // default 5.0
 constexpr float trunc_voxel_multiplier = 8.0;
 
 static std::vector<core::Tensor> extrinsic_tf_list;
@@ -143,7 +143,7 @@ char ipAddress[255] = "169.254.125.169";
 int server_fd, new_socket, valread;
 struct sockaddr_in address;
 
-circular_buffer<open3d::geometry::TriangleMesh, 10> meshes;
+circular_buffer<open3d::geometry::TriangleMesh, 100> meshes;
 
 open3d::geometry::TriangleMesh transmitMesh;
 
@@ -296,6 +296,7 @@ void transmitData(open3d::geometry::TriangleMesh *inOpen3d, int counter)
                 int totalSent = 0;
                 int toTransfer = meshBuffer.size();
                 // connection established, start transmitting
+                // TODO: could memory allocation be causing slowdown?
                 char outBuffer[meshBuffer.size()] = {0};
                 auto result = copy(meshBuffer.buffer()->begin(), meshBuffer.buffer()->end(), outBuffer);
                 // check that the copy was successful
@@ -311,7 +312,7 @@ void transmitData(open3d::geometry::TriangleMesh *inOpen3d, int counter)
                     {
                         valsent = send(new_socket, outBuffer + totalSent, toTransfer, 0);
                     }
-                    if(valsent == -1)
+                    if (valsent == -1)
                     {
                         printf("valsent = -1 -> socket error 2\n");
                         return;
@@ -389,25 +390,34 @@ static void *transmitDataWrapper(void *data)
     int counter = 0;
 
     // only transmit when signal is recieved
+    // while (1)
     while (1)
     {
-        pthread_cond_wait(&cond1, &lock1);
-        // with 0 decimation, transmission takes about 0.02s - 50fps
-        geometry::TriangleMesh legacyMesh = meshes.get().value();
-        if (&legacyMesh != NULL)
+        if (!meshes.empty())
         {
-            transmitData(&(legacyMesh), counter);
+            // pthread_cond_wait(&cond1, &lock1);
+            // with 0 decimation, transmission takes about 0.02s - 50fps
+            geometry::TriangleMesh legacyMesh = meshes.get().value();
+            if (&legacyMesh != NULL)
+            {
+                transmitData(&(legacyMesh), counter);
+            }
+            else
+            {
+                printf("trying to send data, but mesh is null\n");
+            }
+            counter++;
         }
         else
         {
-            printf("trying to send data, but mesh is null\n");
+            std::this_thread::sleep_for(std::chrono::milliseconds(5));
         }
-        counter++;
     }
     // closing the connected socket
     close(new_socket);
     // closing the listening socket
     shutdown(server_fd, SHUT_RDWR);
+    return NULL;
 }
 
 void generateMeshAndTransmit(std::vector<t::geometry::Image> *color_img_list, std::vector<t::geometry::Image> *depth_img_list)
@@ -419,12 +429,16 @@ void generateMeshAndTransmit(std::vector<t::geometry::Image> *color_img_list, st
     t::geometry::Image texture_img;
 
     std::this_thread::sleep_for(std::chrono::milliseconds(2000));
+    high_resolution_clock::time_point fpsStart = high_resolution_clock::now();
+    duration<double, std::milli> fpsDel;
+    int fpsCounter = 0;
     delta("frame capture period");
     while (1)
-    {  
-        std::this_thread::sleep_for(std::chrono::milliseconds(30));
+    {
+        // std::this_thread::sleep_for(std::chrono::milliseconds(30));
         if (img_lock.try_lock())
         {
+            // TODO: some sort of slowdown here 
             // t::geometry::VoxelBlockGrid voxel_grid({"tsdf", "weight"},
             //                                        {core::Dtype::Float32, core::Dtype::Float32},
             //                                        {{1}, {1}}, voxel_size, 16, block_count, gpu_device);
@@ -442,6 +456,7 @@ void generateMeshAndTransmit(std::vector<t::geometry::Image> *color_img_list, st
             }
             img_lock.unlock();
             
+
             mesh = voxel_grid.ExtractTriangleMesh(0, -1).To(cpu_device);
             mesh.RemoveVertexAttr("normals");
             // material.SetAlbedoMap(texture_img);
@@ -452,17 +467,29 @@ void generateMeshAndTransmit(std::vector<t::geometry::Image> *color_img_list, st
             transmitMesh = mesh.ToLegacy();
             if (transmitMesh.vertices_.size() != 0)
             {
-                std::shared_ptr<open3d::geometry::TriangleMesh> decimated = transmitMesh.SimplifyVertexClustering(0.01);
+                // std::shared_ptr<open3d::geometry::TriangleMesh> decimated = transmitMesh.SimplifyVertexClustering(0.01);
                 // decimated = decimated->SimplifyQuadricDecimation(0.5*decimated->triangles_.size(), 1000000000, 1.0);
-                meshes.put(*(decimated.get()));
-                pthread_cond_signal(&cond1);
+                // std::shared_ptr<open3d::geometry::TriangleMesh> decimated = transmitMesh.SimplifyQuadricDecimation(0.5*transmitMesh.triangles_.size(), 1000000000, 1.0);
+                // meshes.put(*(decimated.get()));
+                meshes.put(transmitMesh);
+                // pthread_cond_signal(&cond1);
             }
             else
             {
                 printf("conversion to legacy mesh FAILED\n");
             }
+            delta("frame time");
+            if(fpsCounter % 30 == 0){
+                fpsDel = (high_resolution_clock::now()-fpsStart)/1000;
+                printf("fps: %f\n",((30)/(fpsDel.count())));
+                fpsStart = high_resolution_clock::now();
+            }
+            fpsCounter++;
         }
-        delta("frame time");
+        else{
+            std::this_thread::sleep_for(std::chrono::milliseconds(5));
+        }
+        
     }
 }
 
@@ -560,21 +587,21 @@ int main(int argc, char **argv)
     // visualization window //
     //////////////////////////
     // to reset display output: export DISPLAY=":0.0"
-    visualization::gui::Application &o3d_app = visualization::gui::Application::GetInstance();
-    o3d_app.Initialize("/home/sc/Open3D-0.16.0/build/bin/resources");
-    std::shared_ptr<visualization::visualizer::O3DVisualizer> visualizer = std::make_shared<visualization::visualizer::O3DVisualizer>("visualization", 3840, 2160);
+    // visualization::gui::Application &o3d_app = visualization::gui::Application::GetInstance();
+    // o3d_app.Initialize("/home/sc/Open3D-0.16.0/build/bin/resources");
+    // std::shared_ptr<visualization::visualizer::O3DVisualizer> visualizer = std::make_shared<visualization::visualizer::O3DVisualizer>("visualization", 3840, 2160);
 
-    Eigen::Vector4f bg_color = {1.0, 1.0, 1.0, 1.0};
-    visualizer->SetBackground(bg_color);
-    visualizer->ShowSettings(true);
-    visualizer->ResetCameraToDefault();
-    visualization::gui::Application::GetInstance().AddWindow(visualizer);
+    // Eigen::Vector4f bg_color = {1.0, 1.0, 1.0, 1.0};
+    // visualizer->SetBackground(bg_color);
+    // visualizer->ShowSettings(true);
+    // visualizer->ResetCameraToDefault();
+    // visualization::gui::Application::GetInstance().AddWindow(visualizer);
 
     ///////////////////////////
     // reconstruction thread //
     ///////////////////////////
 
-    o3d_app.Run();
+    // o3d_app.Run();
 
     for (unsigned i = 0; i < NUM_THREADS; i++)
     {

@@ -31,10 +31,11 @@ class kinect_capture {
             this->serial_num = this->device.get_serialnum();
             
             this->config = K4A_DEVICE_CONFIG_INIT_DISABLE_ALL;
-            this->config.camera_fps = K4A_FRAMES_PER_SECOND_15;
+            this->config.camera_fps = K4A_FRAMES_PER_SECOND_30;
             this->config.color_format = K4A_IMAGE_FORMAT_COLOR_MJPG;
             this->config.color_resolution = K4A_COLOR_RESOLUTION_1080P;
             this->config.depth_mode = K4A_DEPTH_MODE_NFOV_UNBINNED;
+            // this->config.depth_mode = K4A_DEPTH_MODE_NFOV_2X2BINNED ;
             // this->config.depth_mode = K4A_DEPTH_MODE_WFOV_2X2BINNED;
             this->config.synchronized_images_only = true;
             
