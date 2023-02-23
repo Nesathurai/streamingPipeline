@@ -507,7 +507,7 @@ void startCam(MultiKinectCapture *multi_cap, std::vector<t::geometry::Image> *co
 {
     std::cout << "Found " << k4a_device_get_installed_count() << " connected devices" << std::endl;
 
-    multi_cap = new MultiKinectCapture(device_count);
+    multi_cap = new MultiKinectCapture(device_count, -80, true);
 
     camera::PinholeCameraIntrinsic intrinsic;
     for (uint32_t i = 0; i < device_count; i++)
