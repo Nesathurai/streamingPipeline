@@ -23,6 +23,8 @@
 #include "open3d/io/TriangleMeshIO.h"
 #include "circularBuffer.hpp"
 
+// #include <connect.h>
+
 using namespace std;
 const char *get_error_text()
 {
@@ -45,16 +47,17 @@ const char *get_error_text()
 #endif
 }
 
-#define MAXTRANSMIT 4096
-#define PORT 8090
-#define NUM_THREADS 1
+#define MAXTRANSMIT 1500
+#define PORT 8080
+#define NUM_THREADS 2
 
-pthread_mutex_t fileMutex;
-int sock = 0;
-int valread = 0;
-int client_fd = 0;
+// pthread_mutex_t fileMutex;
+// int sock = 0;
+// int client_fd = 0;
 int enableDebugging = 0;
-char ipAddress[255] = "sc-4.arena.andrew.cmu.edu";
+// char ipAddress[255] = "sc-4.arena.andrew.cmu.edu";
+char ipAddress0[255] = "169.254.125.169";
+char ipAddress1[255] = "169.254.25.1";
 
 // Declaration of thread condition variable
 pthread_cond_t cond1 = PTHREAD_COND_INITIALIZER;
@@ -62,7 +65,44 @@ pthread_cond_t cond1 = PTHREAD_COND_INITIALIZER;
 // declaring mutex
 pthread_mutex_t lock1 = PTHREAD_MUTEX_INITIALIZER;
 
-circular_buffer<open3d::geometry::TriangleMesh, 10> meshes;
+circular_buffer<open3d::geometry::TriangleMesh, 100> meshes;
+circular_buffer<open3d::geometry::TriangleMesh, 100> meshIngest0;
+circular_buffer<open3d::geometry::TriangleMesh, 100> meshIngest1;
+
+using std::chrono::duration;
+using std::chrono::high_resolution_clock;
+using std::chrono::system_clock;
+using std::chrono::time_point;
+high_resolution_clock::time_point start_time = high_resolution_clock::now();
+int time_first = 1;
+
+duration<double, std::milli> delta(std::string msg = "")
+{
+    // duration<double, std::milli> t2 = (end2 - start2) / 1000;
+    duration<double, std::milli> del;
+    // time_point<system_clock,duration<double>> zero_{};
+    int silent = 0;
+    if (msg == "")
+    {
+        silent = 1;
+    }
+    if (time_first)
+    {
+        start_time = high_resolution_clock::now();
+        time_first = 0;
+        del = (high_resolution_clock::now() - high_resolution_clock::now()) / 1000;
+    }
+    else
+    {
+        del = (high_resolution_clock::now() - start_time) / 1000;
+        if (!silent)
+        {
+            std::cout << "  " << msg << ": " << del.count() << " s" << std::endl;
+        }
+        start_time = high_resolution_clock::now();
+    }
+    return del;
+}
 
 typedef struct
 {
@@ -70,8 +110,10 @@ typedef struct
     int id;
 } args_t;
 
+// TODO: bottleneck is decoding which takes about 0.06 seconds - 14fps
 int draco_to_open3d(open3d::geometry::TriangleMesh *outOpen3d, draco::EncoderBuffer *inDracoBuffer)
 {
+    // delta();
     draco::DecoderBuffer decoderBuffer;
     if (inDracoBuffer->size() <= 0)
     {
@@ -435,134 +477,176 @@ int draco_to_open3d(open3d::geometry::TriangleMesh *outOpen3d, draco::EncoderBuf
 
         printf("success\n");
     }
-
+    // delta("decoding time");
     return 0;
 }
 
 static void *recieve(void *data)
 {
     args_t *args = (args_t *)data;
-
-    int sock = 0;
-    int valread = 0;
-    int client_fd = 0;
+    int sock;
+    ;
+    int client_fd = args->id;
+    // int sock = 0;
+    // int client_fd =0;
     struct sockaddr_in address;
-    char buffer[MAXTRANSMIT] = {0};
 
     // convert hostname to ip address
     struct hostent *hp;
-    hp = gethostbyname(ipAddress);
+    if (args->id == 0)
+    {
+        hp = gethostbyname(ipAddress0);
+        std::cout << ipAddress0 << std::endl;
+        std::cout << args->port << std::endl;
+    }
+    else if (args->id == 1)
+    {
+        hp = gethostbyname(ipAddress1);
+        std::cout << ipAddress1 << std::endl;
+        std::cout << args->port << std::endl;
+    }
+    else
+    {
+        printf("bad thread id - no ip address\n");
+    }
+
     std::cout << hp->h_addr << std::endl;
     address.sin_family = hp->h_addrtype;
     bcopy((char *)hp->h_addr, (char *)&address.sin_addr, hp->h_length);
-    address.sin_port = htons(args->port);
+    // address.sin_port = htons(args->port);
+    address.sin_port = htons(8080);
 
-    if ((sock = socket(AF_INET, SOCK_STREAM, 0)) < 0)
+    if ((sock = socket(PF_INET, SOCK_STREAM, 0)) < 0)
     {
         printf("\n Socket creation error \n");
         // return -1;
     }
 
     if ((client_fd = connect(sock, (struct sockaddr *)&address, sizeof(address))) < 0)
+    // if ((client_fd = explain_connect (sock, (struct sockaddr *)&address, sizeof(address))) < 0)
     {
-        printf("\nConnection Failed in thread: %d\n", args->id);
+        printf("\nConnection Failed in thread: %d with error: %d\n", args->id, client_fd);
         return NULL;
     }
-
-    // open3d::visualization::Visualizer visualizer;
-    // if (!visualizer.CreateVisualizerWindow("Mesh", 1600, 900, 50, 50))
-    // {
-    //     open3d::utility::LogWarning(
-    //         "[DrawGeometries] Failed creating OpenGL "
-    //         "window.");
-    //     return NULL;
-    // }
-    // visualizer.GetRenderOption().point_show_normal_ = true;
-    // visualizer.GetRenderOption().mesh_show_wireframe_ = false;
-    // visualizer.GetRenderOption().mesh_show_back_face_ = false;
-    // visualizer.BuildUtilities();
-    // visualizer.UpdateWindowTitle();
-    // open3d::visualization::ViewControl &view_control = visualizer.GetViewControl();
-
     // will probably break when the file is too small...
     int counter = 0;
+    char buffer[MAXTRANSMIT] = {0};
+    high_resolution_clock::time_point fpsStart = high_resolution_clock::now();
+    duration<double, std::milli> fpsDel;
+    delta();
     while (1)
     {
-        // pthread_mutex_lock(&fileMutex);
-        valread = read(sock, buffer, MAXTRANSMIT);
-        int toRead = atoi(buffer);
-        if (toRead == 0)
+        // std::this_thread::sleep_for(std::chrono::milliseconds(30));
+        if (counter % 30 == 0)
         {
-            continue;
+            fpsDel = (high_resolution_clock::now() - fpsStart) / 1000;
+            printf("fps: %f\n", ((30) / (fpsDel.count())));
+            fpsStart = high_resolution_clock::now();
         }
-        printf("(%d) client toRead: %d\n", counter, toRead);
-        // printf("(%d) read: %d\n", counter, valread);
-
-        // TODO: does increasing buffer size help with failed decode?
-        char inBuffer[toRead] = {0};
-        int totalRead = 0;
-        while (toRead >= MAXTRANSMIT)
+        ssize_t valread = read(sock, buffer, MAXTRANSMIT);
+        // std::cout << buffer << std::endl;
+        if (valread == MAXTRANSMIT)
         {
-            valread = read(sock, (inBuffer + totalRead), MAXTRANSMIT);
-            totalRead += valread;
-            toRead -= valread;
-            // printf("(%d) read: %d toRead: %d\n", counter, valread, toRead);
-        }
-
-        valread = read(sock, (inBuffer + totalRead), toRead);
-        totalRead += valread;
-        toRead -= valread;
-        // printf("(%d) read: %d toRead: %d\n", counter, valread, toRead);
-        if (counter > 1)
-        {
-            draco::EncoderBuffer inDracoBuffer;
-            inDracoBuffer.buffer()->insert(inDracoBuffer.buffer()->end(), &inBuffer[0], &inBuffer[totalRead]);
-
-            // convert draco to open3d
-            auto outOpen3d = std::make_shared<open3d::geometry::TriangleMesh>();
-            // open3d::geometry::TriangleMesh *outOpen3d = malloc(sizeof(open3d::geometry::TriangleMesh));
-
-            bool success = draco_to_open3d(outOpen3d.get(), &inDracoBuffer);
-            if (success == 0)
+            // strol more robust than atoi
+            // int totalSize;
+            long toRead = strtol(buffer, NULL, 10);
+            // totalSize = toRead;
+            if (toRead < 0)
             {
-                meshes.put(*(outOpen3d.get()));
-                // signal that a frame has been captured to renderer
-                pthread_cond_signal(&cond1);
-                if (counter < 10)
-                {
-                    char outPath[1024] = {0};
-                    sprintf(outPath, "/home/sc/draco_encode_cpp/meshes/frame_%d.obj", counter);
-                    open3d::io::WriteTriangleMeshToOBJ(outPath, *outOpen3d, false, false, true, false, false, false);
-                    printf("(%d) buffer save success: %d\n", counter, !success);
-                }
-            }
-            else{
+                printf("strtol failed\n");
                 continue;
             }
-            // draw geometry (non-blocking) made from oped3d::visualization::DrawGeometries
-            // if(counter % 10 == 0){
-            //     // pthread_mutex_lock(&fileMutex);
-            //     visualizer.ClearGeometries();
-            //     visualizer.AddGeometry({outOpen3d});
 
-            //     // std::thread t(&open3d::visualization::Visualizer::WaitEvents, &visualizer);
-            //     // t.join();
-            //     visualizer.WaitEvents()
-            //     // pthread_mutex_unlock(&fileMutex);
-            // }
+            if ((toRead <= 100))
+            {
+                printf("(%d) client read %ld, toRead: %ld\n", counter, valread, toRead);
+                printf("recieved package less than 100 bytes - this should never print because its prevented server side\n");
+                continue;
+            }
+            printf("(%d:%d) client toRead: %ld\n", args->id, counter, toRead);
+            // printf("(%d) read: %d\n", counter, valread);
+
+            char inBuffer[toRead] = {0};
+            ssize_t totalRead = 0;
+            while (toRead > 0)
+            {
+                if (toRead > MAXTRANSMIT)
+                {
+                    valread = read(sock, (inBuffer + totalRead), MAXTRANSMIT);
+                }
+                else
+                {
+                    valread = read(sock, (inBuffer + totalRead), toRead);
+                }
+
+                if (valread == -1)
+                {
+                    printf("valread = -1 -> socket error\n");
+                    break;
+                }
+                totalRead += valread;
+                toRead -= valread;
+                // printf("(%d) read: %d toRead: %d\n", counter, valread, toRead);
+            }
+
+            if (toRead == 0)
+            {
+                draco::EncoderBuffer inDracoBuffer;
+                inDracoBuffer.buffer()->insert(inDracoBuffer.buffer()->end(), &inBuffer[0], &inBuffer[totalRead]);
+
+                // convert draco to open3d
+                std::shared_ptr<open3d::geometry::TriangleMesh> outOpen3d = std::make_shared<open3d::geometry::TriangleMesh>();
+                bool success = draco_to_open3d(outOpen3d.get(), &inDracoBuffer);
+                if (success == 0)
+                {
+                    if (args->id == 0)
+                    {
+                        meshIngest0.put(*(outOpen3d.get()));
+                    }
+                    else if (args->id == 1)
+                    {
+                        meshIngest1.put(*(outOpen3d.get()));
+                    }
+
+                    // meshes.put(*(outOpen3d.get()));
+                    // signal that a frame has been captured to renderer
+                    pthread_cond_signal(&cond1);
+                    if (counter < 10)
+                    {
+                        char outPath[1024] = {0};
+                        sprintf(outPath, "/home/sc/streamingPipeline/meshes/frame_%d.obj", counter);
+                        open3d::io::WriteTriangleMeshToOBJ(outPath, *outOpen3d, false, false, true, false, false, false);
+                        // printf("(%d) buffer save success: %d\n", counter, !success);
+                    }
+                    counter++;
+                }
+                else
+                {
+                    printf("failed decoding\n");
+                    continue;
+                }
+                std::this_thread::sleep_for(std::chrono::milliseconds(5));
+            }
+            else
+            {
+                printf("valread = -1 -> socket error 2\n");
+            }
         }
-
-        counter++;
+        else
+        {
+            long toRead = strtol(buffer, NULL, 10);
+            printf("valread = %ld -> toRead = %ld socket error 3\n", valread, toRead);
+            break;
+            // continue;
+        }
+        // delta("frame arrival period");
         // pthread_mutex_unlock(&fileMutex);
     }
 
-    // closing visualization window
-    // visualizer.DestroyVisualizerWindow();
     // closing the connected socket
     printf("Last error was: %s\n", get_error_text());
     close(client_fd);
     return NULL;
-    // printf("Last error was: %s\n", get_error_text());
 }
 
 static void *app(void *data)
@@ -581,7 +665,6 @@ static void *app(void *data)
     visualizer.BuildUtilities();
     visualizer.UpdateWindowTitle();
     open3d::visualization::ViewControl &view_control = visualizer.GetViewControl();
-    
 
     while (1)
     {
@@ -590,9 +673,9 @@ static void *app(void *data)
         pthread_cond_wait(&cond1, &lock1);
         // printf("rendering\n");
         visualizer.ClearGeometries();
-        open3d::geometry::TriangleMesh legacyMesh = meshes.get().value();
-        if (&legacyMesh != NULL)
+        if (meshes.empty() == false)
         {
+            open3d::geometry::TriangleMesh legacyMesh = meshes.get().value();
             // visualizer.AddGeometry({legacyMesh});
             visualizer.AddGeometry({std::make_shared<open3d::geometry::TriangleMesh>(legacyMesh)});
             // visualizer.WaitEvents();
@@ -608,11 +691,40 @@ static void *app(void *data)
     return NULL;
 }
 
+static void *merge(void *data)
+{
+    int counter = 0;
+    // want to merge the meshes ingested by camera 0 and camera 1
+    while (1)
+    {
+        if (!meshIngest0.empty() && !meshIngest1.empty())
+        {
+            // merge the meshes
+            open3d::geometry::TriangleMesh meshMerged = meshIngest0.get().value();
+            meshMerged += meshIngest1.get().value();
+            meshes.put(meshMerged);
+            if (counter < 10)
+            {
+                char outPath[1024] = {0};
+                sprintf(outPath, "/home/sc/streamingPipeline/meshesMerged/frame_01_%d.obj", counter);
+                open3d::io::WriteTriangleMeshToOBJ(outPath, meshMerged, false, false, true, false, false, false);
+            }
+            counter++;
+        }
+        else
+        {
+            // wait a bit before trying again
+            std::this_thread::sleep_for(std::chrono::milliseconds(5));
+        }
+    }
+
+    return NULL;
+}
 int main(int argc, char const *argv[])
 {
 
-    pthread_t threads[NUM_THREADS + 1];
-    args_t args[NUM_THREADS + 1];
+    pthread_t threads[NUM_THREADS + 2];
+    args_t args[NUM_THREADS + 2];
 
     for (int i = 0; i < NUM_THREADS; i++)
     {
@@ -620,11 +732,13 @@ int main(int argc, char const *argv[])
         args[i].id = i;
         pthread_create(&threads[i], NULL, recieve, &args[i]);
     }
-
-    pthread_create(&threads[NUM_THREADS], NULL, app, NULL);
-
+    // sleep(20);
     // create visualization thread
-    for (unsigned i = 0; i < NUM_THREADS + 1; i++)
+    pthread_create(&threads[NUM_THREADS], NULL, app, NULL);
+    pthread_create(&threads[NUM_THREADS+1], NULL, merge, NULL);
+
+
+    for (unsigned i = 0; i < NUM_THREADS + 2; i++)
     {
         pthread_join(threads[i], NULL);
     }

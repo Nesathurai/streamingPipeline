@@ -65,6 +65,7 @@ CMakeFiles/reconstruction.dir/src/camera_alignment.cpp.o: ../src/camera_alignmen
   /usr/include/x86_64-linux-gnu/bits/types/__sigset_t.h \
   /usr/include/x86_64-linux-gnu/bits/types/struct_timeval.h \
   /usr/include/x86_64-linux-gnu/bits/types/struct_timespec.h \
+  /usr/include/x86_64-linux-gnu/bits/select2.h \
   /usr/include/x86_64-linux-gnu/bits/pthreadtypes.h \
   /usr/include/x86_64-linux-gnu/bits/thread-shared-types.h \
   /usr/include/x86_64-linux-gnu/bits/pthreadtypes-arch.h \
@@ -72,7 +73,9 @@ CMakeFiles/reconstruction.dir/src/camera_alignment.cpp.o: ../src/camera_alignmen
   /usr/include/x86_64-linux-gnu/bits/struct_mutex.h \
   /usr/include/x86_64-linux-gnu/bits/struct_rwlock.h \
   /usr/include/alloca.h \
+  /usr/include/x86_64-linux-gnu/bits/stdlib-bsearch.h \
   /usr/include/x86_64-linux-gnu/bits/stdlib-float.h \
+  /usr/include/x86_64-linux-gnu/bits/stdlib.h \
   /usr/include/c++/11/bits/std_abs.h \
   /usr/include/c++/11/array \
   /usr/include/c++/11/utility \
@@ -153,6 +156,8 @@ CMakeFiles/reconstruction.dir/src/camera_alignment.cpp.o: ../src/camera_alignmen
   /usr/include/c++/11/cstring \
   /usr/include/string.h \
   /usr/include/strings.h \
+  /usr/include/x86_64-linux-gnu/bits/strings_fortified.h \
+  /usr/include/x86_64-linux-gnu/bits/string_fortified.h \
   /usr/include/c++/11/cctype \
   /usr/include/ctype.h \
   /usr/include/c++/11/string \
@@ -167,6 +172,7 @@ CMakeFiles/reconstruction.dir/src/camera_alignment.cpp.o: ../src/camera_alignmen
   /usr/include/x86_64-linux-gnu/bits/types/__mbstate_t.h \
   /usr/include/x86_64-linux-gnu/bits/types/__FILE.h \
   /usr/include/x86_64-linux-gnu/bits/types/FILE.h \
+  /usr/include/x86_64-linux-gnu/bits/wchar2.h \
   /usr/include/c++/11/bits/localefwd.h \
   /usr/include/x86_64-linux-gnu/c++/11/bits/c++locale.h \
   /usr/include/c++/11/clocale \
@@ -203,6 +209,8 @@ CMakeFiles/reconstruction.dir/src/camera_alignment.cpp.o: ../src/camera_alignmen
   /usr/include/x86_64-linux-gnu/bits/types/struct_FILE.h \
   /usr/include/x86_64-linux-gnu/bits/types/cookie_io_functions_t.h \
   /usr/include/x86_64-linux-gnu/bits/stdio_lim.h \
+  /usr/include/x86_64-linux-gnu/bits/stdio.h \
+  /usr/include/x86_64-linux-gnu/bits/stdio2.h \
   /usr/include/c++/11/cerrno \
   /usr/include/errno.h \
   /usr/include/x86_64-linux-gnu/bits/errno.h \
@@ -567,6 +575,7 @@ CMakeFiles/reconstruction.dir/src/camera_alignment.cpp.o: ../src/camera_alignmen
   /usr/include/x86_64-linux-gnu/bits/confname.h \
   /usr/include/x86_64-linux-gnu/bits/getopt_posix.h \
   /usr/include/x86_64-linux-gnu/bits/getopt_core.h \
+  /usr/include/x86_64-linux-gnu/bits/unistd.h \
   /usr/include/x86_64-linux-gnu/bits/unistd_ext.h \
   /usr/include/linux/close_range.h \
   /usr/local/include/apriltag/apriltag_pose.h \
@@ -610,6 +619,8 @@ CMakeFiles/reconstruction.dir/src/kinect_capture.cpp.o: ../src/kinect_capture.cp
   /usr/include/x86_64-linux-gnu/bits/types/locale_t.h \
   /usr/include/x86_64-linux-gnu/bits/types/__locale_t.h \
   /usr/include/strings.h \
+  /usr/include/x86_64-linux-gnu/bits/strings_fortified.h \
+  /usr/include/x86_64-linux-gnu/bits/string_fortified.h \
   /usr/include/k4a/k4a_export.h \
   /usr/include/c++/11/algorithm \
   /usr/include/c++/11/utility \
@@ -655,6 +666,7 @@ CMakeFiles/reconstruction.dir/src/kinect_capture.cpp.o: ../src/kinect_capture.cp
   /usr/include/x86_64-linux-gnu/bits/types/__sigset_t.h \
   /usr/include/x86_64-linux-gnu/bits/types/struct_timeval.h \
   /usr/include/x86_64-linux-gnu/bits/types/struct_timespec.h \
+  /usr/include/x86_64-linux-gnu/bits/select2.h \
   /usr/include/x86_64-linux-gnu/bits/pthreadtypes.h \
   /usr/include/x86_64-linux-gnu/bits/thread-shared-types.h \
   /usr/include/x86_64-linux-gnu/bits/pthreadtypes-arch.h \
@@ -662,7 +674,9 @@ CMakeFiles/reconstruction.dir/src/kinect_capture.cpp.o: ../src/kinect_capture.cp
   /usr/include/x86_64-linux-gnu/bits/struct_mutex.h \
   /usr/include/x86_64-linux-gnu/bits/struct_rwlock.h \
   /usr/include/alloca.h \
+  /usr/include/x86_64-linux-gnu/bits/stdlib-bsearch.h \
   /usr/include/x86_64-linux-gnu/bits/stdlib-float.h \
+  /usr/include/x86_64-linux-gnu/bits/stdlib.h \
   /usr/include/c++/11/bits/std_abs.h \
   /usr/include/c++/11/bits/algorithmfwd.h \
   /usr/include/c++/11/bits/stl_heap.h \
@@ -732,6 +746,7 @@ CMakeFiles/reconstruction.dir/src/kinect_capture.cpp.o: ../src/kinect_capture.cp
   /usr/include/x86_64-linux-gnu/bits/types/__mbstate_t.h \
   /usr/include/x86_64-linux-gnu/bits/types/__FILE.h \
   /usr/include/x86_64-linux-gnu/bits/types/FILE.h \
+  /usr/include/x86_64-linux-gnu/bits/wchar2.h \
   /usr/include/c++/11/bits/localefwd.h \
   /usr/include/x86_64-linux-gnu/c++/11/bits/c++locale.h \
   /usr/include/c++/11/clocale \
@@ -766,6 +781,8 @@ CMakeFiles/reconstruction.dir/src/kinect_capture.cpp.o: ../src/kinect_capture.cp
   /usr/include/x86_64-linux-gnu/bits/types/struct_FILE.h \
   /usr/include/x86_64-linux-gnu/bits/types/cookie_io_functions_t.h \
   /usr/include/x86_64-linux-gnu/bits/stdio_lim.h \
+  /usr/include/x86_64-linux-gnu/bits/stdio.h \
+  /usr/include/x86_64-linux-gnu/bits/stdio2.h \
   /usr/include/c++/11/cerrno \
   /usr/include/errno.h \
   /usr/include/x86_64-linux-gnu/bits/errno.h \
@@ -1172,6 +1189,8 @@ CMakeFiles/reconstruction.dir/src/multi_kinect_capture.cpp.o: ../src/multi_kinec
   /usr/include/x86_64-linux-gnu/bits/types/locale_t.h \
   /usr/include/x86_64-linux-gnu/bits/types/__locale_t.h \
   /usr/include/strings.h \
+  /usr/include/x86_64-linux-gnu/bits/strings_fortified.h \
+  /usr/include/x86_64-linux-gnu/bits/string_fortified.h \
   /usr/include/k4a/k4a_export.h \
   /usr/include/c++/11/algorithm \
   /usr/include/c++/11/utility \
@@ -1217,6 +1236,7 @@ CMakeFiles/reconstruction.dir/src/multi_kinect_capture.cpp.o: ../src/multi_kinec
   /usr/include/x86_64-linux-gnu/bits/types/__sigset_t.h \
   /usr/include/x86_64-linux-gnu/bits/types/struct_timeval.h \
   /usr/include/x86_64-linux-gnu/bits/types/struct_timespec.h \
+  /usr/include/x86_64-linux-gnu/bits/select2.h \
   /usr/include/x86_64-linux-gnu/bits/pthreadtypes.h \
   /usr/include/x86_64-linux-gnu/bits/thread-shared-types.h \
   /usr/include/x86_64-linux-gnu/bits/pthreadtypes-arch.h \
@@ -1224,7 +1244,9 @@ CMakeFiles/reconstruction.dir/src/multi_kinect_capture.cpp.o: ../src/multi_kinec
   /usr/include/x86_64-linux-gnu/bits/struct_mutex.h \
   /usr/include/x86_64-linux-gnu/bits/struct_rwlock.h \
   /usr/include/alloca.h \
+  /usr/include/x86_64-linux-gnu/bits/stdlib-bsearch.h \
   /usr/include/x86_64-linux-gnu/bits/stdlib-float.h \
+  /usr/include/x86_64-linux-gnu/bits/stdlib.h \
   /usr/include/c++/11/bits/std_abs.h \
   /usr/include/c++/11/bits/algorithmfwd.h \
   /usr/include/c++/11/bits/stl_heap.h \
@@ -1294,6 +1316,7 @@ CMakeFiles/reconstruction.dir/src/multi_kinect_capture.cpp.o: ../src/multi_kinec
   /usr/include/x86_64-linux-gnu/bits/types/__mbstate_t.h \
   /usr/include/x86_64-linux-gnu/bits/types/__FILE.h \
   /usr/include/x86_64-linux-gnu/bits/types/FILE.h \
+  /usr/include/x86_64-linux-gnu/bits/wchar2.h \
   /usr/include/c++/11/bits/localefwd.h \
   /usr/include/x86_64-linux-gnu/c++/11/bits/c++locale.h \
   /usr/include/c++/11/clocale \
@@ -1328,6 +1351,8 @@ CMakeFiles/reconstruction.dir/src/multi_kinect_capture.cpp.o: ../src/multi_kinec
   /usr/include/x86_64-linux-gnu/bits/types/struct_FILE.h \
   /usr/include/x86_64-linux-gnu/bits/types/cookie_io_functions_t.h \
   /usr/include/x86_64-linux-gnu/bits/stdio_lim.h \
+  /usr/include/x86_64-linux-gnu/bits/stdio.h \
+  /usr/include/x86_64-linux-gnu/bits/stdio2.h \
   /usr/include/c++/11/cerrno \
   /usr/include/errno.h \
   /usr/include/x86_64-linux-gnu/bits/errno.h \
@@ -1758,6 +1783,7 @@ CMakeFiles/reconstruction.dir/src/reconstruction.cpp.o: ../src/reconstruction.cp
   /usr/include/x86_64-linux-gnu/bits/types/__sigset_t.h \
   /usr/include/x86_64-linux-gnu/bits/types/struct_timeval.h \
   /usr/include/x86_64-linux-gnu/bits/types/struct_timespec.h \
+  /usr/include/x86_64-linux-gnu/bits/select2.h \
   /usr/include/x86_64-linux-gnu/bits/pthreadtypes.h \
   /usr/include/x86_64-linux-gnu/bits/thread-shared-types.h \
   /usr/include/x86_64-linux-gnu/bits/pthreadtypes-arch.h \
@@ -1765,7 +1791,9 @@ CMakeFiles/reconstruction.dir/src/reconstruction.cpp.o: ../src/reconstruction.cp
   /usr/include/x86_64-linux-gnu/bits/struct_mutex.h \
   /usr/include/x86_64-linux-gnu/bits/struct_rwlock.h \
   /usr/include/alloca.h \
+  /usr/include/x86_64-linux-gnu/bits/stdlib-bsearch.h \
   /usr/include/x86_64-linux-gnu/bits/stdlib-float.h \
+  /usr/include/x86_64-linux-gnu/bits/stdlib.h \
   /usr/include/c++/11/bits/specfun.h \
   /usr/include/c++/11/bits/stl_algobase.h \
   /usr/include/c++/11/bits/functexcept.h \
@@ -1821,6 +1849,7 @@ CMakeFiles/reconstruction.dir/src/reconstruction.cpp.o: ../src/reconstruction.cp
   /usr/include/x86_64-linux-gnu/bits/types/__mbstate_t.h \
   /usr/include/x86_64-linux-gnu/bits/types/__FILE.h \
   /usr/include/x86_64-linux-gnu/bits/types/FILE.h \
+  /usr/include/x86_64-linux-gnu/bits/wchar2.h \
   /usr/include/c++/11/exception \
   /usr/include/c++/11/bits/exception_ptr.h \
   /usr/include/c++/11/bits/cxxabi_init_exception.h \
@@ -1884,6 +1913,8 @@ CMakeFiles/reconstruction.dir/src/reconstruction.cpp.o: ../src/reconstruction.cp
   /usr/include/x86_64-linux-gnu/bits/types/struct_FILE.h \
   /usr/include/x86_64-linux-gnu/bits/types/cookie_io_functions_t.h \
   /usr/include/x86_64-linux-gnu/bits/stdio_lim.h \
+  /usr/include/x86_64-linux-gnu/bits/stdio.h \
+  /usr/include/x86_64-linux-gnu/bits/stdio2.h \
   /usr/include/c++/11/cerrno \
   /usr/include/errno.h \
   /usr/include/x86_64-linux-gnu/bits/errno.h \
@@ -1948,6 +1979,8 @@ CMakeFiles/reconstruction.dir/src/reconstruction.cpp.o: ../src/reconstruction.cp
   /usr/include/c++/11/cstring \
   /usr/include/string.h \
   /usr/include/strings.h \
+  /usr/include/x86_64-linux-gnu/bits/strings_fortified.h \
+  /usr/include/x86_64-linux-gnu/bits/string_fortified.h \
   /usr/include/c++/11/climits \
   /usr/lib/gcc/x86_64-linux-gnu/11/include/limits.h \
   /usr/lib/gcc/x86_64-linux-gnu/11/include/syslimits.h \
@@ -2562,6 +2595,7 @@ CMakeFiles/reconstruction.dir/src/reconstruction.cpp.o: ../src/reconstruction.cp
   /usr/include/x86_64-linux-gnu/bits/confname.h \
   /usr/include/x86_64-linux-gnu/bits/getopt_posix.h \
   /usr/include/x86_64-linux-gnu/bits/getopt_core.h \
+  /usr/include/x86_64-linux-gnu/bits/unistd.h \
   /usr/include/x86_64-linux-gnu/bits/unistd_ext.h \
   /usr/include/linux/close_range.h \
   /usr/local/include/apriltag/apriltag_pose.h \
@@ -2587,6 +2621,7 @@ CMakeFiles/reconstruction.dir/src/reconstruction.cpp.o: ../src/reconstruction.cp
   /usr/include/x86_64-linux-gnu/asm/sockios.h \
   /usr/include/asm-generic/sockios.h \
   /usr/include/x86_64-linux-gnu/bits/types/struct_osockaddr.h \
+  /usr/include/x86_64-linux-gnu/bits/socket2.h \
   /usr/include/x86_64-linux-gnu/bits/in.h \
   /usr/include/netdb.h \
   /usr/include/rpc/netdb.h \
@@ -2701,6 +2736,7 @@ CMakeFiles/reconstruction.dir/src/texture_mapping.cpp.o: ../src/texture_mapping.
   /usr/include/x86_64-linux-gnu/bits/types/__sigset_t.h \
   /usr/include/x86_64-linux-gnu/bits/types/struct_timeval.h \
   /usr/include/x86_64-linux-gnu/bits/types/struct_timespec.h \
+  /usr/include/x86_64-linux-gnu/bits/select2.h \
   /usr/include/x86_64-linux-gnu/bits/pthreadtypes.h \
   /usr/include/x86_64-linux-gnu/bits/thread-shared-types.h \
   /usr/include/x86_64-linux-gnu/bits/pthreadtypes-arch.h \
@@ -2708,7 +2744,9 @@ CMakeFiles/reconstruction.dir/src/texture_mapping.cpp.o: ../src/texture_mapping.
   /usr/include/x86_64-linux-gnu/bits/struct_mutex.h \
   /usr/include/x86_64-linux-gnu/bits/struct_rwlock.h \
   /usr/include/alloca.h \
+  /usr/include/x86_64-linux-gnu/bits/stdlib-bsearch.h \
   /usr/include/x86_64-linux-gnu/bits/stdlib-float.h \
+  /usr/include/x86_64-linux-gnu/bits/stdlib.h \
   /usr/include/c++/11/bits/specfun.h \
   /usr/include/c++/11/bits/stl_algobase.h \
   /usr/include/c++/11/bits/functexcept.h \
@@ -2764,6 +2802,7 @@ CMakeFiles/reconstruction.dir/src/texture_mapping.cpp.o: ../src/texture_mapping.
   /usr/include/x86_64-linux-gnu/bits/types/__mbstate_t.h \
   /usr/include/x86_64-linux-gnu/bits/types/__FILE.h \
   /usr/include/x86_64-linux-gnu/bits/types/FILE.h \
+  /usr/include/x86_64-linux-gnu/bits/wchar2.h \
   /usr/include/c++/11/exception \
   /usr/include/c++/11/bits/exception_ptr.h \
   /usr/include/c++/11/bits/cxxabi_init_exception.h \
@@ -2827,6 +2866,8 @@ CMakeFiles/reconstruction.dir/src/texture_mapping.cpp.o: ../src/texture_mapping.
   /usr/include/x86_64-linux-gnu/bits/types/struct_FILE.h \
   /usr/include/x86_64-linux-gnu/bits/types/cookie_io_functions_t.h \
   /usr/include/x86_64-linux-gnu/bits/stdio_lim.h \
+  /usr/include/x86_64-linux-gnu/bits/stdio.h \
+  /usr/include/x86_64-linux-gnu/bits/stdio2.h \
   /usr/include/c++/11/cerrno \
   /usr/include/errno.h \
   /usr/include/x86_64-linux-gnu/bits/errno.h \
@@ -2891,6 +2932,8 @@ CMakeFiles/reconstruction.dir/src/texture_mapping.cpp.o: ../src/texture_mapping.
   /usr/include/c++/11/cstring \
   /usr/include/string.h \
   /usr/include/strings.h \
+  /usr/include/x86_64-linux-gnu/bits/strings_fortified.h \
+  /usr/include/x86_64-linux-gnu/bits/string_fortified.h \
   /usr/include/c++/11/climits \
   /usr/lib/gcc/x86_64-linux-gnu/11/include/limits.h \
   /usr/lib/gcc/x86_64-linux-gnu/11/include/syslimits.h \
@@ -3555,6 +3598,7 @@ CMakeFiles/reconstruction.dir/src/util.cpp.o: ../src/util.cpp \
   /usr/include/x86_64-linux-gnu/bits/types/__sigset_t.h \
   /usr/include/x86_64-linux-gnu/bits/types/struct_timeval.h \
   /usr/include/x86_64-linux-gnu/bits/types/struct_timespec.h \
+  /usr/include/x86_64-linux-gnu/bits/select2.h \
   /usr/include/x86_64-linux-gnu/bits/pthreadtypes.h \
   /usr/include/x86_64-linux-gnu/bits/thread-shared-types.h \
   /usr/include/x86_64-linux-gnu/bits/pthreadtypes-arch.h \
@@ -3562,7 +3606,9 @@ CMakeFiles/reconstruction.dir/src/util.cpp.o: ../src/util.cpp \
   /usr/include/x86_64-linux-gnu/bits/struct_mutex.h \
   /usr/include/x86_64-linux-gnu/bits/struct_rwlock.h \
   /usr/include/alloca.h \
+  /usr/include/x86_64-linux-gnu/bits/stdlib-bsearch.h \
   /usr/include/x86_64-linux-gnu/bits/stdlib-float.h \
+  /usr/include/x86_64-linux-gnu/bits/stdlib.h \
   /usr/include/c++/11/bits/specfun.h \
   /usr/include/c++/11/bits/stl_algobase.h \
   /usr/include/c++/11/bits/functexcept.h \
@@ -3618,6 +3664,7 @@ CMakeFiles/reconstruction.dir/src/util.cpp.o: ../src/util.cpp \
   /usr/include/x86_64-linux-gnu/bits/types/__mbstate_t.h \
   /usr/include/x86_64-linux-gnu/bits/types/__FILE.h \
   /usr/include/x86_64-linux-gnu/bits/types/FILE.h \
+  /usr/include/x86_64-linux-gnu/bits/wchar2.h \
   /usr/include/c++/11/exception \
   /usr/include/c++/11/bits/exception_ptr.h \
   /usr/include/c++/11/bits/cxxabi_init_exception.h \
@@ -3681,6 +3728,8 @@ CMakeFiles/reconstruction.dir/src/util.cpp.o: ../src/util.cpp \
   /usr/include/x86_64-linux-gnu/bits/types/struct_FILE.h \
   /usr/include/x86_64-linux-gnu/bits/types/cookie_io_functions_t.h \
   /usr/include/x86_64-linux-gnu/bits/stdio_lim.h \
+  /usr/include/x86_64-linux-gnu/bits/stdio.h \
+  /usr/include/x86_64-linux-gnu/bits/stdio2.h \
   /usr/include/c++/11/cerrno \
   /usr/include/errno.h \
   /usr/include/x86_64-linux-gnu/bits/errno.h \
@@ -3745,6 +3794,8 @@ CMakeFiles/reconstruction.dir/src/util.cpp.o: ../src/util.cpp \
   /usr/include/c++/11/cstring \
   /usr/include/string.h \
   /usr/include/strings.h \
+  /usr/include/x86_64-linux-gnu/bits/strings_fortified.h \
+  /usr/include/x86_64-linux-gnu/bits/string_fortified.h \
   /usr/include/c++/11/climits \
   /usr/lib/gcc/x86_64-linux-gnu/11/include/limits.h \
   /usr/lib/gcc/x86_64-linux-gnu/11/include/syslimits.h \
@@ -4360,6 +4411,7 @@ CMakeFiles/reconstruction.dir/src/util.cpp.o: ../src/util.cpp \
   /usr/include/x86_64-linux-gnu/bits/confname.h \
   /usr/include/x86_64-linux-gnu/bits/getopt_posix.h \
   /usr/include/x86_64-linux-gnu/bits/getopt_core.h \
+  /usr/include/x86_64-linux-gnu/bits/unistd.h \
   /usr/include/x86_64-linux-gnu/bits/unistd_ext.h \
   /usr/include/linux/close_range.h \
   /usr/local/include/apriltag/apriltag_pose.h \
@@ -4407,6 +4459,8 @@ CMakeFiles/reconstruction.dir/src/util.cpp.o: ../src/util.cpp \
 /usr/include/x86_64-linux-gnu/bits/types/sigevent_t.h:
 
 /usr/include/rpc/netdb.h:
+
+/usr/include/x86_64-linux-gnu/bits/socket2.h:
 
 /usr/local/include/draco/mesh/valence_cache.h:
 
@@ -4810,6 +4864,8 @@ CMakeFiles/reconstruction.dir/src/util.cpp.o: ../src/util.cpp \
 
 /usr/include/x86_64-linux-gnu/bits/unistd_ext.h:
 
+/usr/include/x86_64-linux-gnu/bits/unistd.h:
+
 /usr/include/x86_64-linux-gnu/bits/confname.h:
 
 /usr/include/x86_64-linux-gnu/c++/11/bits/opt_random.h:
@@ -4842,17 +4898,19 @@ CMakeFiles/reconstruction.dir/src/util.cpp.o: ../src/util.cpp \
 
 /usr/local/include/apriltag/common/zarray.h:
 
-/usr/include/opencv4/opencv2/core/vsx_utils.hpp:
+/usr/local/include/apriltag/common/image_types.h:
 
-/home/sc/open3d_install_0.16.0/include/open3d/3rdparty/Eigen/src/misc/RealSvd2x2.h:
+/usr/local/include/apriltag/common/image_u8.h:
 
-/usr/include/c++/11/bits/shared_ptr_atomic.h:
+/usr/local/include/apriltag/common/matd.h:
 
-/usr/include/c++/11/bits/nested_exception.h:
+/usr/local/include/apriltag/apriltag.h:
 
-/home/sc/open3d_install_0.16.0/include/open3d/visualization/gui/Events.h:
+/home/sc/open3d_install_0.16.0/include/open3d/3rdparty/Eigen/src/Core/util/ReenableStupidWarnings.h:
 
-/home/sc/open3d_install_0.16.0/include/open3d/3rdparty/Eigen/src/plugins/ReshapedMethods.h:
+/home/sc/open3d_install_0.16.0/include/open3d/3rdparty/Eigen/src/Core/GlobalFunctions.h:
+
+/home/sc/open3d_install_0.16.0/include/open3d/3rdparty/Eigen/src/Core/StlIterators.h:
 
 /usr/include/c++/11/exception:
 
@@ -4891,8 +4949,6 @@ CMakeFiles/reconstruction.dir/src/util.cpp.o: ../src/util.cpp \
 /usr/include/c++/11/tr1/gamma.tcc:
 
 /usr/include/x86_64-linux-gnu/gnu/stubs-64.h:
-
-/usr/include/c++/11/bits/specfun.h:
 
 /home/sc/open3d_install_0.16.0/include/open3d/io/LineSetIO.h:
 
@@ -4946,6 +5002,8 @@ CMakeFiles/reconstruction.dir/src/util.cpp.o: ../src/util.cpp \
 
 /usr/include/x86_64-linux-gnu/bits/types/cookie_io_functions_t.h:
 
+/usr/include/x86_64-linux-gnu/bits/stdio2.h:
+
 /usr/include/stdio.h:
 
 /home/sc/open3d_install_0.16.0/include/open3d/3rdparty/Eigen/src/plugins/CommonCwiseBinaryOps.h:
@@ -4974,8 +5032,6 @@ CMakeFiles/reconstruction.dir/src/util.cpp.o: ../src/util.cpp \
 
 /home/sc/open3d_install_0.16.0/include/open3d/3rdparty/Eigen/src/Core/ArithmeticSequence.h:
 
-/usr/local/include/apriltag/apriltag.h:
-
 /usr/include/c++/11/ext/concurrence.h:
 
 /home/sc/open3d_install_0.16.0/include/open3d/visualization/gui/ImageWidget.h:
@@ -4994,6 +5050,8 @@ CMakeFiles/reconstruction.dir/src/util.cpp.o: ../src/util.cpp \
 
 /usr/include/c++/11/bits/localefwd.h:
 
+/usr/include/c++/11/bits/specfun.h:
+
 /usr/local/include/draco/compression/decode.h:
 
 /home/sc/open3d_install_0.16.0/include/open3d/utility/ISAInfo.h:
@@ -5003,8 +5061,6 @@ CMakeFiles/reconstruction.dir/src/util.cpp.o: ../src/util.cpp \
 /home/sc/open3d_install_0.16.0/include/open3d/t/pipelines/kernel/TransformationConverter.h:
 
 /home/sc/open3d_install_0.16.0/include/open3d/3rdparty/Eigen/src/Core/products/TriangularSolverMatrix.h:
-
-/usr/include/x86_64-linux-gnu/bits/types/mbstate_t.h:
 
 /home/sc/open3d_install_0.16.0/include/open3d/3rdparty/Eigen/Cholesky:
 
@@ -5020,11 +5076,17 @@ CMakeFiles/reconstruction.dir/src/util.cpp.o: ../src/util.cpp \
 
 /usr/include/c++/11/locale:
 
+/usr/include/x86_64-linux-gnu/bits/types/mbstate_t.h:
+
+/usr/include/x86_64-linux-gnu/bits/strings_fortified.h:
+
 /usr/include/string.h:
 
 /usr/local/include/draco/mesh/corner_table.h:
 
 /usr/include/opencv4/opencv2/dnn/dict.hpp:
+
+/usr/include/x86_64-linux-gnu/bits/stdlib-bsearch.h:
 
 /usr/include/x86_64-linux-gnu/bits/mathcalls-narrow.h:
 
@@ -5043,10 +5105,6 @@ CMakeFiles/reconstruction.dir/src/util.cpp.o: ../src/util.cpp \
 /usr/include/c++/11/bits/stl_vector.h:
 
 /usr/include/c++/11/cstddef:
-
-/usr/include/x86_64-linux-gnu/bits/types/__FILE.h:
-
-/usr/include/c++/11/backward/auto_ptr.h:
 
 /home/sc/open3d_install_0.16.0/include/open3d/visualization/gui/MenuBase.h:
 
@@ -5092,6 +5150,8 @@ CMakeFiles/reconstruction.dir/src/util.cpp.o: ../src/util.cpp \
 
 /usr/include/x86_64-linux-gnu/bits/types/struct_tm.h:
 
+/usr/include/x86_64-linux-gnu/bits/stdio.h:
+
 /usr/include/c++/11/bits/locale_facets.tcc:
 
 /usr/include/c++/11/bits/stringfwd.h:
@@ -5111,6 +5171,18 @@ CMakeFiles/reconstruction.dir/src/util.cpp.o: ../src/util.cpp \
 /home/sc/open3d_install_0.16.0/include/open3d/io/sensor/RGBDRecorder.h:
 
 /usr/include/c++/11/unordered_map:
+
+/usr/local/include/draco/io/obj_encoder.h:
+
+/usr/include/c++/11/bits/refwrap.h:
+
+/usr/include/c++/11/bits/string_view.tcc:
+
+/home/sc/open3d_install_0.16.0/include/open3d/visualization/rendering/MaterialModifier.h:
+
+/usr/include/c++/11/bits/hash_bytes.h:
+
+/usr/include/c++/11/bits/move.h:
 
 /usr/include/x86_64-linux-gnu/bits/setjmp.h:
 
@@ -5178,12 +5250,6 @@ CMakeFiles/reconstruction.dir/src/util.cpp.o: ../src/util.cpp \
 
 /usr/lib/gcc/x86_64-linux-gnu/11/include/xmmintrin.h:
 
-/usr/include/x86_64-linux-gnu/bits/getopt_core.h:
-
-/home/sc/open3d_install_0.16.0/include/open3d/3rdparty/Eigen/src/Core/Diagonal.h:
-
-/usr/include/c++/11/bits/functexcept.h:
-
 /usr/lib/gcc/x86_64-linux-gnu/11/include/stdarg.h:
 
 /usr/include/x86_64-linux-gnu/bits/types/sigset_t.h:
@@ -5246,8 +5312,6 @@ CMakeFiles/reconstruction.dir/src/util.cpp.o: ../src/util.cpp \
 
 /usr/include/c++/11/type_traits:
 
-/home/sc/open3d_install_0.16.0/include/open3d/3rdparty/Eigen/src/Core/util/ReenableStupidWarnings.h:
-
 /usr/include/x86_64-linux-gnu/bits/types/timer_t.h:
 
 /usr/include/c++/11/bits/std_function.h:
@@ -5304,12 +5368,6 @@ CMakeFiles/reconstruction.dir/src/util.cpp.o: ../src/util.cpp \
 
 /usr/include/c++/11/bits/cxxabi_init_exception.h:
 
-/usr/local/include/draco/core/draco_index_type.h:
-
-/usr/include/c++/11/bits/atomic_lockfree_defines.h:
-
-/home/sc/open3d_install_0.16.0/include/open3d/3rdparty/Eigen/src/Core/products/GeneralMatrixVector.h:
-
 /home/sc/open3d_install_0.16.0/include/open3d/3rdparty/Eigen/src/Core/ArrayWrapper.h:
 
 /usr/include/c++/11/bits/uniform_int_dist.h:
@@ -5336,8 +5394,6 @@ CMakeFiles/reconstruction.dir/src/util.cpp.o: ../src/util.cpp \
 
 /usr/include/errno.h:
 
-/home/sc/open3d_install_0.16.0/include/open3d/3rdparty/Eigen/src/Core/GlobalFunctions.h:
-
 /usr/include/c++/11/utility:
 
 /usr/local/include/draco/core/hash_utils.h:
@@ -5349,8 +5405,6 @@ CMakeFiles/reconstruction.dir/src/util.cpp.o: ../src/util.cpp \
 /usr/include/c++/11/tr1/ell_integral.tcc:
 
 /usr/include/x86_64-linux-gnu/c++/11/bits/error_constants.h:
-
-/usr/include/opencv4/opencv2/videoio.hpp:
 
 /home/sc/open3d_install_0.16.0/include/open3d/3rdparty/Eigen/src/plugins/MatrixCwiseUnaryOps.h:
 
@@ -5386,11 +5440,15 @@ CMakeFiles/reconstruction.dir/src/util.cpp.o: ../src/util.cpp \
 
 /usr/include/x86_64-linux-gnu/bits/types/clock_t.h:
 
-/usr/include/c++/11/queue:
-
-/home/sc/open3d_install_0.16.0/include/open3d/3rdparty/Eigen/src/Core/ProductEvaluators.h:
-
 /usr/include/x86_64-linux-gnu/sys/cdefs.h:
+
+/usr/include/x86_64-linux-gnu/bits/getopt_core.h:
+
+/home/sc/open3d_install_0.16.0/include/open3d/3rdparty/Eigen/src/Core/Diagonal.h:
+
+/usr/include/c++/11/bits/functexcept.h:
+
+/usr/include/x86_64-linux-gnu/bits/stdlib.h:
 
 /home/sc/open3d_install_0.16.0/include/open3d/io/sensor/RGBDSensor.h:
 
@@ -5474,6 +5532,8 @@ CMakeFiles/reconstruction.dir/src/util.cpp.o: ../src/util.cpp \
 
 /home/sc/open3d_install_0.16.0/include/open3d/3rdparty/Eigen/src/Core/MatrixBase.h:
 
+/usr/include/x86_64-linux-gnu/bits/string_fortified.h:
+
 /home/sc/open3d_install_0.16.0/include/open3d/3rdparty/Eigen/src/Core/DenseStorage.h:
 
 /usr/include/opencv4/opencv2/core/cv_cpu_dispatch.h:
@@ -5508,6 +5568,18 @@ CMakeFiles/reconstruction.dir/src/util.cpp.o: ../src/util.cpp \
 
 /usr/include/c++/11/bits/stl_iterator_base_types.h:
 
+/usr/include/x86_64-linux-gnu/bits/select2.h:
+
+/usr/include/c++/11/cwchar:
+
+/usr/include/c++/11/climits:
+
+/usr/include/c++/11/new:
+
+/usr/include/opencv4/opencv2/core/cvdef.h:
+
+/usr/include/c++/11/bits/sstream.tcc:
+
 /usr/include/opencv4/opencv2/core/cvstd.inl.hpp:
 
 /home/sc/open3d_install_0.16.0/include/open3d/3rdparty/Eigen/src/Core/products/GeneralMatrixMatrixTriangular.h:
@@ -5534,14 +5606,6 @@ CMakeFiles/reconstruction.dir/src/util.cpp.o: ../src/util.cpp \
 
 /usr/include/strings.h:
 
-/usr/include/c++/11/bits/random.tcc:
-
-/home/sc/open3d_install_0.16.0/include/open3d/3rdparty/Eigen/src/Core/util/XprHelper.h:
-
-/usr/include/c++/11/bits/atomic_base.h:
-
-/usr/include/opencv4/opencv2/core/cuda.inl.hpp:
-
 ../include/circularBuffer.hpp:
 
 /usr/include/x86_64-linux-gnu/c++/11/bits/gthr-default.h:
@@ -5550,19 +5614,9 @@ CMakeFiles/reconstruction.dir/src/util.cpp.o: ../src/util.cpp \
 
 /usr/include/x86_64-linux-gnu/bits/struct_rwlock.h:
 
-/usr/local/include/draco/io/obj_encoder.h:
-
-/usr/include/c++/11/bits/refwrap.h:
-
 /usr/include/alloca.h:
 
 /usr/include/x86_64-linux-gnu/bits/atomic_wide_counter.h:
-
-/usr/include/c++/11/bits/move.h:
-
-/home/sc/open3d_install_0.16.0/include/open3d/visualization/rendering/MaterialModifier.h:
-
-/usr/include/c++/11/bits/hash_bytes.h:
 
 /usr/include/asm-generic/errno-base.h:
 
@@ -5582,8 +5636,6 @@ CMakeFiles/reconstruction.dir/src/util.cpp.o: ../src/util.cpp \
 
 /home/sc/open3d_install_0.16.0/include/open3d/3rdparty/Eigen/src/Core/ConditionEstimator.h:
 
-/usr/include/c++/11/cwchar:
-
 /usr/local/include/draco/core/draco_index_type_vector.h:
 
 /usr/lib/gcc/x86_64-linux-gnu/11/include/stdint.h:
@@ -5594,29 +5646,11 @@ CMakeFiles/reconstruction.dir/src/util.cpp.o: ../src/util.cpp \
 
 /usr/include/x86_64-linux-gnu/bits/posix2_lim.h:
 
-/home/sc/open3d_install_0.16.0/include/open3d/3rdparty/Eigen/src/Core/SolverBase.h:
-
-/usr/include/c++/11/pstl/glue_memory_defs.h:
-
-/home/sc/open3d_install_0.16.0/include/open3d/3rdparty/Eigen/src/Core/products/SelfadjointRank2Update.h:
-
-/usr/include/opencv4/opencv2/flann/all_indices.h:
-
 /usr/include/c++/11/ext/type_traits.h:
 
 /home/sc/open3d_install_0.16.0/include/open3d/geometry/Image.h:
 
 /home/sc/open3d_install_0.16.0/include/open3d/3rdparty/Eigen/src/Core/IO.h:
-
-/home/sc/open3d_install_0.16.0/include/open3d/3rdparty/Eigen/src/Core/StlIterators.h:
-
-/usr/include/c++/11/new:
-
-/usr/include/c++/11/climits:
-
-/usr/include/opencv4/opencv2/core/cvdef.h:
-
-/usr/include/c++/11/bits/sstream.tcc:
 
 /usr/lib/gcc/x86_64-linux-gnu/11/include/limits.h:
 
@@ -5668,7 +5702,51 @@ CMakeFiles/reconstruction.dir/src/util.cpp.o: ../src/util.cpp \
 
 /usr/include/c++/11/bits/functional_hash.h:
 
-/usr/include/c++/11/bits/string_view.tcc:
+/usr/include/c++/11/bits/nested_exception.h:
+
+/home/sc/open3d_install_0.16.0/include/open3d/visualization/gui/Events.h:
+
+/usr/include/x86_64-linux-gnu/bits/wchar2.h:
+
+/home/sc/open3d_install_0.16.0/include/open3d/3rdparty/Eigen/src/plugins/ReshapedMethods.h:
+
+/home/sc/open3d_install_0.16.0/include/open3d/3rdparty/Eigen/src/misc/RealSvd2x2.h:
+
+/usr/include/c++/11/bits/shared_ptr_atomic.h:
+
+/home/sc/open3d_install_0.16.0/include/open3d/3rdparty/Eigen/src/Core/ProductEvaluators.h:
+
+/usr/include/c++/11/queue:
+
+/usr/include/c++/11/bits/random.tcc:
+
+/home/sc/open3d_install_0.16.0/include/open3d/3rdparty/Eigen/src/Core/util/XprHelper.h:
+
+/usr/include/opencv4/opencv2/core/cuda.inl.hpp:
+
+/usr/include/c++/11/bits/atomic_base.h:
+
+/usr/include/opencv4/opencv2/videoio.hpp:
+
+/usr/local/include/draco/core/draco_index_type.h:
+
+/home/sc/open3d_install_0.16.0/include/open3d/3rdparty/Eigen/src/Core/products/GeneralMatrixVector.h:
+
+/usr/include/c++/11/bits/atomic_lockfree_defines.h:
+
+/usr/include/x86_64-linux-gnu/bits/types/__FILE.h:
+
+/usr/include/c++/11/backward/auto_ptr.h:
+
+/home/sc/open3d_install_0.16.0/include/open3d/3rdparty/Eigen/src/Core/SolverBase.h:
+
+/usr/include/c++/11/pstl/glue_memory_defs.h:
+
+/home/sc/open3d_install_0.16.0/include/open3d/3rdparty/Eigen/src/Core/products/SelfadjointRank2Update.h:
+
+/usr/include/opencv4/opencv2/flann/all_indices.h:
+
+/usr/include/opencv4/opencv2/core/vsx_utils.hpp:
 
 /usr/include/c++/11/bits/allocated_ptr.h:
 
@@ -5946,8 +6024,6 @@ CMakeFiles/reconstruction.dir/src/util.cpp.o: ../src/util.cpp \
 
 /usr/include/c++/11/bits/locale_conv.h:
 
-/usr/local/include/apriltag/common/image_u8.h:
-
 /usr/include/c++/11/bits/quoted_string.h:
 
 /usr/include/c++/11/math.h:
@@ -5979,8 +6055,6 @@ CMakeFiles/reconstruction.dir/src/util.cpp.o: ../src/util.cpp \
 /home/sc/open3d_install_0.16.0/include/open3d/visualization/utility/GLHelper.h:
 
 /usr/include/opencv4/opencv2/core/cuda_types.hpp:
-
-/usr/local/include/apriltag/common/matd.h:
 
 /home/sc/open3d_install_0.16.0/include/open3d/3rdparty/Eigen/src/Core/Array.h:
 
@@ -6231,5 +6305,3 @@ CMakeFiles/reconstruction.dir/src/util.cpp.o: ../src/util.cpp \
 /home/sc/open3d_install_0.16.0/include/open3d/3rdparty/Eigen/src/Core/BooleanRedux.h:
 
 /home/sc/open3d_install_0.16.0/include/open3d/3rdparty/Eigen/src/Core/Select.h:
-
-/usr/local/include/apriltag/common/image_types.h:

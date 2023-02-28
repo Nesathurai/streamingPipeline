@@ -6,5 +6,5 @@ CXX_DEFINES = -DFMT_HEADER_ONLY=0 -DFMT_STRING_ALIAS=1 -DFMT_USE_WINDOWS_H=0 -D_
 
 CXX_INCLUDES = -I/home/sc/streamingPipeline/include -isystem /usr/include/opencv4 -isystem /home/sc/open3d_install_0.16.0/include -isystem /home/sc/open3d_install_0.16.0/include/open3d/3rdparty -isystem /usr/local/include/apriltag
 
-CXX_FLAGS = 
+CXX_FLAGS = -ggdb -O3
 
