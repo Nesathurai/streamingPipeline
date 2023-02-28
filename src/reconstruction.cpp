@@ -54,9 +54,44 @@ const char *get_error_text()
 
 #endif
 }
-#define MAXTRANSMIT 4096
-#define PORT 8090
+#define MAXTRANSMIT 1500
+#define PORT 60000
 #define NUM_THREADS 3
+
+using std::chrono::duration;
+using std::chrono::high_resolution_clock;
+using std::chrono::system_clock;
+using std::chrono::time_point;
+high_resolution_clock::time_point start_time = high_resolution_clock::now();
+int time_first = 1;
+
+duration<double, std::milli> delta(std::string msg = "")
+{
+    // duration<double, std::milli> t2 = (end2 - start2) / 1000;
+    duration<double, std::milli> del;
+    // time_point<system_clock,duration<double>> zero_{};
+    int silent = 0;
+    if (msg == "")
+    {
+        silent = 1;
+    }
+    if (time_first)
+    {
+        start_time = high_resolution_clock::now();
+        time_first = 0;
+        del = (high_resolution_clock::now() - high_resolution_clock::now()) / 1000;
+    }
+    else
+    {
+        del = (high_resolution_clock::now() - start_time) / 1000;
+        if (!silent)
+        {
+            std::cout << "  " << msg << ": " << del.count() << " s" << std::endl;
+        }
+        start_time = high_resolution_clock::now();
+    }
+    return del;
+}
 
 typedef struct
 {
@@ -89,9 +124,9 @@ typedef struct
     int id;
 } generateMesh_args_t;
 
-constexpr float voxel_size = 0.01;
+constexpr float voxel_size = 0.011; // default 0.01
 constexpr int block_count = 10000;
-constexpr float depth_max = 5.0;
+constexpr float depth_max = 5.0; // default 5.0
 constexpr float trunc_voxel_multiplier = 8.0;
 
 static std::vector<core::Tensor> extrinsic_tf_list;
@@ -99,28 +134,26 @@ static std::vector<core::Tensor> intrinsic_list;
 
 uint32_t device_count = 1;
 std::mutex img_lock;
-pthread_mutex_t meshMutex;
 
 bool enableDebugging = 0;
 bool enableRender = 0;
-char ipAddress[255] = "sc-4.arena.andrew.cmu.edu";
+// char ipAddress[255] = "sc-4.arena.andrew.cmu.edu";
+char ipAddress[255] = "169.254.125.169";
 
 int server_fd, new_socket, valread;
 struct sockaddr_in address;
 
-circular_buffer<open3d::geometry::TriangleMesh, 10> meshes;
+circular_buffer<open3d::geometry::TriangleMesh, 100> meshes;
 
 open3d::geometry::TriangleMesh transmitMesh;
 
 // Declaration of thread condition variable
 pthread_cond_t cond1 = PTHREAD_COND_INITIALIZER;
-
 // declaring mutex
 pthread_mutex_t lock1 = PTHREAD_MUTEX_INITIALIZER;
 
 int open3d_to_draco(open3d::geometry::TriangleMesh *inOpen3d, draco::EncoderBuffer *outDracoBuffer)
 {
-
     draco::Mesh *open3dToDracoMesh = new draco::Mesh();
     open3dToDracoMesh->set_num_points((uint32_t)inOpen3d->vertices_.size());
     open3dToDracoMesh->SetNumFaces(inOpen3d->triangles_.size());
@@ -131,9 +164,19 @@ int open3d_to_draco(open3d::geometry::TriangleMesh *inOpen3d, draco::EncoderBuff
     open3dToDracoPositionAttribute.Init(draco::PointAttribute::Type(0), 3, draco::DataType::DT_FLOAT64, true, inOpen3d->vertices_.size());
     open3dToDracoNormalAttribute.Init(draco::PointAttribute::Type(1), 3, draco::DataType::DT_FLOAT64, true, inOpen3d->vertex_normals_.size());
 
-    // add these attributes to the mesh
+    // add these attributes to the mesh and check if it succeded
     int32_t open3dToDracoPositionAttributeID = open3dToDracoMesh->AddAttribute(open3dToDracoPositionAttribute, true, (uint32_t)inOpen3d->vertices_.size());
+    if (open3dToDracoPositionAttributeID == -1)
+    {
+        printf("open3d to draco position attribute adding failed\n");
+        return -1;
+    }
     int32_t open3dToDracoNormalAttributeID = open3dToDracoMesh->AddAttribute(open3dToDracoNormalAttribute, true, (uint32_t)inOpen3d->vertex_normals_.size());
+    if (open3dToDracoNormalAttributeID == -1)
+    {
+        printf("open3d to draco normal attribute adding failed\n");
+        return -1;
+    }
 
     // initialize attribute vertex values from open3d
     unsigned int inOpen3dAttributeIdx = 0;
@@ -224,8 +267,11 @@ int open3d_to_draco(open3d::geometry::TriangleMesh *inOpen3d, draco::EncoderBuff
     // std::cout << "about to encode" << std::endl;
 
     encoder.EncodeMeshToBuffer(*open3dToDracoMesh, outDracoBuffer);
-
-    return 0;
+    if (outDracoBuffer != NULL)
+    {
+        return 0;
+    }
+    return -1;
 }
 
 void transmitData(open3d::geometry::TriangleMesh *inOpen3d, int counter)
@@ -233,40 +279,64 @@ void transmitData(open3d::geometry::TriangleMesh *inOpen3d, int counter)
     draco::EncoderBuffer meshBuffer;
     char buffer[MAXTRANSMIT] = {0};
 
-    open3d_to_draco(inOpen3d, &meshBuffer);
-
-    if ((meshBuffer.size() > 12))
+    if (open3d_to_draco(inOpen3d, &meshBuffer) == 0)
     {
-        printf("(%d) server to send: %ld\n", counter, meshBuffer.size());
-        sprintf(buffer, "%ld", meshBuffer.size());
-        int response;
-        // printf("(%d) server: transfer started; return: %d\n", counter, response);
-        response = send(new_socket, buffer, MAXTRANSMIT, 0);
-        // printf("(%d) send: %d\n", counter, response);
-
-        // connection established, start transmitting
-        char outBuffer[meshBuffer.size()] = {0};
-        copy(meshBuffer.buffer()->begin(), meshBuffer.buffer()->end(), outBuffer);
-
-        int seek = 0;
-        int toTransfer = meshBuffer.size();
-
-        while (toTransfer >= MAXTRANSMIT)
+        if ((meshBuffer.size() > 100))
         {
-            response = send(new_socket, outBuffer + seek, MAXTRANSMIT, 0);
-            toTransfer -= MAXTRANSMIT;
-            seek += MAXTRANSMIT;
-            // printf("(%d) send: %d\n", counter, response);
-            // printf("(%d) Last error was: %s\n", counter, get_error_text());
+            printf("(%d) server to send: %ld\n", counter, meshBuffer.size());
+            if (sprintf(buffer, "%ld", meshBuffer.size()) <= 0)
+            {
+                printf("sprintf size to buffer FAILED\n");
+            }
+
+            // printf("(%d) server: transfer started; return: %d\n", counter, valsent);
+            ssize_t valsent = send(new_socket, buffer, MAXTRANSMIT, 0);
+            if (valsent == MAXTRANSMIT)
+            {
+                int totalSent = 0;
+                int toTransfer = meshBuffer.size();
+                // connection established, start transmitting
+                // TODO: could memory allocation be causing slowdown?
+                char outBuffer[meshBuffer.size()] = {0};
+                auto result = copy(meshBuffer.buffer()->begin(), meshBuffer.buffer()->end(), outBuffer);
+                // check that the copy was successful
+                assert(result - outBuffer == meshBuffer.buffer()->end() - meshBuffer.buffer()->begin());
+
+                while (toTransfer > 0)
+                {
+                    if (toTransfer > MAXTRANSMIT)
+                    {
+                        valsent = send(new_socket, outBuffer + totalSent, MAXTRANSMIT, 0);
+                    }
+                    else
+                    {
+                        valsent = send(new_socket, outBuffer + totalSent, toTransfer, 0);
+                    }
+                    if (valsent == -1)
+                    {
+                        printf("valsent = -1 -> socket error 2\n");
+                        return;
+                    }
+                    toTransfer -= valsent;
+                    totalSent += valsent;
+                }
+            }
+            else
+            {
+                printf("valsent = -1 or less than MAXTRANSMIT-> socket error 1\n");
+                return;
+            }
         }
-        response = send(new_socket, outBuffer + seek, toTransfer, 0);
-        // printf("(%d) send: %d\n", counter, response);
-        // printf("Last error was: %s\n", get_error_text());
+        else
+        {
+            printf("frame capture failed (meshBuffer is less than 100 bytes)\n");
+            return;
+        }
     }
     else
     {
-        // size of 12 for some reason is an invalid frame
-        std::cout << "frame capture failed" << std::endl;
+        printf("open3d to draco failed - return -1\n");
+        return;
     }
 }
 
@@ -320,89 +390,34 @@ static void *transmitDataWrapper(void *data)
     int counter = 0;
 
     // only transmit when signal is recieved
+    // while (1)
     while (1)
     {
-        // printf("waiting to send data on thread: %d\n", args->id);
-        pthread_cond_wait(&cond1, &lock1);
-        geometry::TriangleMesh legacyMesh = meshes.get().value();
-        if (&legacyMesh != NULL)
+        if (!meshes.empty())
         {
-            transmitData(&(legacyMesh), counter);
+            // pthread_cond_wait(&cond1, &lock1);
+            // with 0 decimation, transmission takes about 0.02s - 50fps
+            geometry::TriangleMesh legacyMesh = meshes.get().value();
+            if (&legacyMesh != NULL)
+            {
+                transmitData(&(legacyMesh), counter);
+            }
+            else
+            {
+                printf("trying to send data, but mesh is null\n");
+            }
+            counter++;
         }
         else
         {
-            printf("trying to send data, but mesh is null\n");
+            std::this_thread::sleep_for(std::chrono::milliseconds(5));
         }
-        counter++;
     }
     // closing the connected socket
     close(new_socket);
-}
-
-void UpdateSingleMesh(std::shared_ptr<visualization::visualizer::O3DVisualizer> visualizer, std::vector<t::geometry::Image> *color_img_list,
-                      std::vector<t::geometry::Image> *depth_img_list)
-{
-    visualization::rendering::Material material("defaultLit");
-    material.SetDefaultProperties();
-
-    t::geometry::TriangleMesh mesh;
-    t::geometry::Image texture_img;
-
-    std::this_thread::sleep_for(std::chrono::milliseconds(2000));
-    int counter = 0;
-    while (1)
-    {
-        std::this_thread::sleep_for(std::chrono::milliseconds(30));
-        if (img_lock.try_lock())
-        {
-            t::geometry::VoxelBlockGrid voxel_grid({"tsdf", "weight"},
-                                                   {core::Dtype::Float32, core::Dtype::Float32},
-                                                   {{1}, {1}}, voxel_size, 16, block_count, gpu_device);
-            texture_img = color_img_list->at(0);
-            for (int i = 0; i < device_count; i++)
-            {
-                core::Tensor frustum_block_coords = voxel_grid.GetUniqueBlockCoordinates(depth_img_list->at(0), intrinsic_list.at(0),
-                                                                                         extrinsic_tf_list.at(0), depth_scale,
-                                                                                         depth_max, trunc_voxel_multiplier);
-
-                voxel_grid.Integrate(frustum_block_coords, depth_img_list->at(0), intrinsic_list.at(0), extrinsic_tf_list.at(0),
-                                     depth_scale, depth_max, trunc_voxel_multiplier);
-            }
-            img_lock.unlock();
-
-            mesh = voxel_grid.ExtractTriangleMesh(0, -1).To(cpu_device);
-            mesh.RemoveVertexAttr("normals");
-
-            mesh_uv_mapping(&(mesh), intrinsic_list.at(0), extrinsic_tf_list.at(0));
-
-            material.SetAlbedoMap(texture_img);
-            mesh.SetMaterial(material);
-
-            visualization::gui::Application::GetInstance().PostToMainThread(
-                visualizer.get(), [visualizer, mesh]()
-                {
-                            visualizer->RemoveGeometry("mesh");
-                            visualizer->AddGeometry("mesh", 
-                                                    std::make_shared<t::geometry::TriangleMesh>(mesh));
-                            
-                            visualizer->PostRedraw(); });
-        }
-
-        // decimate the mesh to save space
-        // inOpen3d->triangles_.size()
-        // mesh = mesh.SimplifyQuadricDecimation(0.8, false);
-        // std::cout << "passes decimation" << std::endl;
-
-        // convert from tensor to legacy (regular triangle mesh)
-        geometry::TriangleMesh legacyMesh;
-        legacyMesh = mesh.ToLegacy();
-
-        // transmitMesh = mesh.ToLegacy();
-
-        // transmit data
-        transmitData(&legacyMesh, counter);
-        counter++;
-    }
+    // closing the listening socket
+    shutdown(server_fd, SHUT_RDWR);
+    return NULL;
 }
 
 void generateMeshAndTransmit(std::vector<t::geometry::Image> *color_img_list, std::vector<t::geometry::Image> *depth_img_list)
@@ -414,89 +429,67 @@ void generateMeshAndTransmit(std::vector<t::geometry::Image> *color_img_list, st
     t::geometry::Image texture_img;
 
     std::this_thread::sleep_for(std::chrono::milliseconds(2000));
+    high_resolution_clock::time_point fpsStart = high_resolution_clock::now();
+    duration<double, std::milli> fpsDel;
+    int fpsCounter = 0;
+    delta("frame capture period");
     while (1)
     {
-        std::this_thread::sleep_for(std::chrono::milliseconds(30));
+        // std::this_thread::sleep_for(std::chrono::milliseconds(30));
         if (img_lock.try_lock())
         {
+            // TODO: some sort of slowdown here 
+            // t::geometry::VoxelBlockGrid voxel_grid({"tsdf", "weight"},
+            //                                        {core::Dtype::Float32, core::Dtype::Float32},
+            //                                        {{1}, {1}}, voxel_size, 16, block_count, gpu_device);
             t::geometry::VoxelBlockGrid voxel_grid({"tsdf", "weight"},
                                                    {core::Dtype::Float32, core::Dtype::Float32},
                                                    {{1}, {1}}, voxel_size, 16, block_count, gpu_device);
-            texture_img = color_img_list->at(0);
+            // texture_img = color_img_list->at(0);
             for (int i = 0; i < device_count; i++)
             {
                 core::Tensor frustum_block_coords = voxel_grid.GetUniqueBlockCoordinates(depth_img_list->at(0), intrinsic_list.at(0),
                                                                                          extrinsic_tf_list.at(0), depth_scale,
                                                                                          depth_max, trunc_voxel_multiplier);
-
                 voxel_grid.Integrate(frustum_block_coords, depth_img_list->at(0), intrinsic_list.at(0), extrinsic_tf_list.at(0),
                                      depth_scale, depth_max, trunc_voxel_multiplier);
             }
             img_lock.unlock();
+            
 
             mesh = voxel_grid.ExtractTriangleMesh(0, -1).To(cpu_device);
             mesh.RemoveVertexAttr("normals");
+            // material.SetAlbedoMap(texture_img);
+            // mesh.SetMaterial(material);
 
-            // std::cout << "number of vertices before" << mesh.ToString() << std::endl;
-
-            // // char outPath[1024] = {0};
-            // // sprintf(outPath, "/home/sc/streamingPipeline/meshes/frame_%d.obj", 0);
-            // // open3d::t::io::WriteTriangleMesh(outPath, mesh, false, false, true, false, false, false);
-
-            // mesh = mesh.SimplifyQuadricDecimation(0.99, true);
-            // std::cout << "number of vertices after" << mesh.ToString() << std::endl;
-            // mesh_uv_mapping(&(mesh), intrinsic_list.at(0), extrinsic_tf_list.at(0));
-
-            material.SetAlbedoMap(texture_img);
-            mesh.SetMaterial(material);
-        }
-
-        // decimate the mesh to save space
-        // inOpen3d->triangles_.size()
-
-        // std::cout << "passes decimation" << std::endl;
-
-        // convert from tensor to legacy (regular triangle mesh)
-        // use semaphore because socket thread is waiting
-
-        if (!pthread_mutex_trylock(&meshMutex))
-        {
+            // convert from tensor to legacy (regular triangle mesh)
+            // use semaphore because socket thread is waiting
             transmitMesh = mesh.ToLegacy();
-            // auto abcd = std::make_shared<open3d::geometry::TriangleMesh>(transmitMesh);
-            // std::shared_ptr<draco::Mesh> meshToSave =
             if (transmitMesh.vertices_.size() != 0)
             {
-                
-                // meshes.put(mesh.ToLegacy());
-                
-                // std::cout << "number of vertices before " << transmitMesh.triangles_.size() << std::endl;
-
-                // char outPath[1024] = {0};
-                // sprintf(outPath, "/home/sc/streamingPipeline/meshes/frame_%d.obj", 0);
-                // open3d::t::io::WriteTriangleMesh(outPath, mesh, false, false, true, false, false, false);
-
-                std::shared_ptr<open3d::geometry::TriangleMesh> decimated = transmitMesh.SimplifyQuadricDecimation(transmitMesh.triangles_.size()/2,1000000,1.0);
-                // std::cout << "number of vertices after " << decimated->triangles_.size() << std::endl;
-
-                meshes.put(*(decimated.get()));
-
+                // std::shared_ptr<open3d::geometry::TriangleMesh> decimated = transmitMesh.SimplifyVertexClustering(0.01);
+                // decimated = decimated->SimplifyQuadricDecimation(0.5*decimated->triangles_.size(), 1000000000, 1.0);
+                // std::shared_ptr<open3d::geometry::TriangleMesh> decimated = transmitMesh.SimplifyQuadricDecimation(0.5*transmitMesh.triangles_.size(), 1000000000, 1.0);
+                // meshes.put(*(decimated.get()));
+                meshes.put(transmitMesh);
+                // pthread_cond_signal(&cond1);
             }
             else
             {
                 printf("conversion to legacy mesh FAILED\n");
             }
-
-            pthread_mutex_unlock(&meshMutex);
-            if (transmitMesh.vertices_.size() != 0)
-            {
-                // printf("Signaling condition variable cond1\n");
-                pthread_cond_signal(&cond1);
+            delta("frame time");
+            if(fpsCounter % 30 == 0){
+                fpsDel = (high_resolution_clock::now()-fpsStart)/1000;
+                printf("fps: %f\n",((30)/(fpsDel.count())));
+                fpsStart = high_resolution_clock::now();
             }
+            fpsCounter++;
         }
-        else
-        {
-            printf("in generateMeshAndTransmit acquiring meshMutex FAILED\n");
+        else{
+            std::this_thread::sleep_for(std::chrono::milliseconds(5));
         }
+        
     }
 }
 
@@ -508,77 +501,13 @@ static void *generateMeshAndTransmitWrapper(void *data)
     return NULL;
 }
 
-void UpdateMultiMesh(std::shared_ptr<visualization::visualizer::O3DVisualizer> visualizer, std::vector<t::geometry::Image> *color_img_list,
-                     std::vector<t::geometry::Image> *depth_img_list,
-                     std::vector<cv::Mat> *cv_color_img_list, std::vector<cv::Mat> *cv_depth_img_list)
-{
-    visualization::rendering::Material material("defaultLit");
-    material.SetDefaultProperties();
-    t::geometry::TriangleMesh mesh;
-
-    std::this_thread::sleep_for(std::chrono::milliseconds(4000));
-
-    while (1)
-    {
-        if (img_lock.try_lock())
-        {
-            t::geometry::VoxelBlockGrid voxel_grid({"tsdf", "weight"},
-                                                   {core::Dtype::Float32, core::Dtype::Float32},
-                                                   {{1}, {1}}, voxel_size, 16, block_count, gpu_device);
-
-            for (int i = 0; i < device_count; i++)
-            {
-                core::Tensor frustum_block_coords = voxel_grid.GetUniqueBlockCoordinates(depth_img_list->at(i), intrinsic_list.at(i),
-                                                                                         extrinsic_tf_list.at(i), depth_scale,
-                                                                                         depth_max, trunc_voxel_multiplier);
-
-                voxel_grid.Integrate(frustum_block_coords, depth_img_list->at(i), intrinsic_list.at(i), extrinsic_tf_list.at(i),
-                                     depth_scale, depth_max, trunc_voxel_multiplier);
-            }
-
-            mesh = voxel_grid.ExtractTriangleMesh(0, -1).To(cpu_device);
-
-            mesh.RemoveVertexAttr("normals");
-
-            optimized_multi_cam_uv(&mesh, intrinsic_list, extrinsic_tf_list, cv_depth_img_list);
-
-            cv::Mat stitched_image;
-            cv::hconcat(*cv_color_img_list, stitched_image);
-
-            img_lock.unlock();
-
-            auto pblob = std::make_shared<core::Blob>(
-                core::Device(), stitched_image.data, [](void *) {});
-            // Create tensor
-            core::Tensor data_o3d(
-                /*shape=*/{stitched_image.rows, stitched_image.cols, stitched_image.channels()},
-                /*stride in elements (not bytes)*/
-                {int64_t(stitched_image.step[0] / stitched_image.elemSize1()),
-                 int64_t(stitched_image.step[1] / stitched_image.elemSize1()), 1},
-                stitched_image.data, core::Dtype::UInt8, pblob);
-            t::geometry::Image texture_img(data_o3d);
-
-            material.SetAlbedoMap(texture_img);
-            mesh.SetMaterial(material);
-
-            visualization::gui::Application::GetInstance().PostToMainThread(
-                visualizer.get(), [visualizer, mesh]()
-                {
-                            visualizer->RemoveGeometry("mesh");
-                            visualizer->AddGeometry("mesh", std::make_shared<t::geometry::TriangleMesh>(mesh));
-
-                            visualizer->PostRedraw(); });
-        }
-    }
-}
-
 void startCam(MultiKinectCapture *multi_cap, std::vector<t::geometry::Image> *color_img_list,
               std::vector<t::geometry::Image> *depth_img_list,
               std::vector<cv::Mat> *cv_color_img_list, std::vector<cv::Mat> *cv_depth_img_list)
 {
     std::cout << "Found " << k4a_device_get_installed_count() << " connected devices" << std::endl;
 
-    multi_cap = new MultiKinectCapture(device_count);
+    multi_cap = new MultiKinectCapture(device_count, -80, true);
 
     camera::PinholeCameraIntrinsic intrinsic;
     for (uint32_t i = 0; i < device_count; i++)
@@ -616,7 +545,6 @@ static void *startCamWrapper(void *data)
 
 int main(int argc, char **argv)
 {
-
     pthread_t threads[NUM_THREADS];
     args_t args[NUM_THREADS];
 
@@ -655,83 +583,29 @@ int main(int argc, char **argv)
     generateMesh_args.id = 2;
     pthread_create(&threads[2], NULL, generateMeshAndTransmitWrapper, &generateMesh_args);
 
-    // std::thread cam_thread(start_cam, multi_cap, &color_img_list, &depth_img_list,
-    //                        &cv_color_img_list, &cv_depth_img_list);
-
     //////////////////////////
     // visualization window //
     //////////////////////////
     // to reset display output: export DISPLAY=":0.0"
-    // auto &o3d_app = visualization::gui::Application::GetInstance();
-    visualization::gui::Application &o3d_app = visualization::gui::Application::GetInstance();
-    o3d_app.Initialize("/home/sc/Open3D-0.16.0/build/bin/resources");
-    // auto visualizer = std::make_shared<visualization::visualizer::O3DVisualizer>("visualization", 3840, 2160);
-    std::shared_ptr<visualization::visualizer::O3DVisualizer> visualizer = std::make_shared<visualization::visualizer::O3DVisualizer>("visualization", 3840, 2160);
+    // visualization::gui::Application &o3d_app = visualization::gui::Application::GetInstance();
+    // o3d_app.Initialize("/home/sc/Open3D-0.16.0/build/bin/resources");
+    // std::shared_ptr<visualization::visualizer::O3DVisualizer> visualizer = std::make_shared<visualization::visualizer::O3DVisualizer>("visualization", 3840, 2160);
 
-    Eigen::Vector4f bg_color = {1.0, 1.0, 1.0, 1.0};
-    visualizer->SetBackground(bg_color);
-    visualizer->ShowSettings(true);
-    visualizer->ResetCameraToDefault();
-    visualization::gui::Application::GetInstance().AddWindow(visualizer);
-
-    // int opt = 1;
-    // int addrlen = sizeof(address);
-
-    // // Creating socket file descriptor
-    // if ((server_fd = socket(AF_INET, SOCK_STREAM, 0)) < 0)
-    // {
-    //     perror("socket failed");
-    //     exit(EXIT_FAILURE);
-    // }
-
-    // // Forcefully attaching socket to the port 8080
-    // if (setsockopt(server_fd, SOL_SOCKET,
-    //                SO_REUSEADDR | SO_REUSEPORT, &opt,
-    //                sizeof(opt)))
-    // {
-    //     perror("setsockopt");
-    //     exit(EXIT_FAILURE);
-    // }
-
-    // struct hostent *hp;
-    // hp = gethostbyname(ipAddress);
-    // address.sin_family = hp->h_addrtype;
-    // bcopy((char *)hp->h_addr, (char *)&address.sin_addr, hp->h_length);
-    // address.sin_port = htons(PORT);
-
-    // // Forcefully attaching socket to the port 8080
-    // if (bind(server_fd, (struct sockaddr *)&address, sizeof(address)) < 0)
-    // {
-    //     perror("bind failed");
-    //     exit(EXIT_FAILURE);
-    // }
-    // if (listen(server_fd, 3) < 0)
-    // {
-    //     perror("listen");
-    //     exit(EXIT_FAILURE);
-    // }
-    // if ((new_socket = accept(server_fd, (struct sockaddr *)&address, (socklen_t *)&addrlen)) < 0)
-    // {
-    //     perror("accept");
-    //     exit(EXIT_FAILURE);
-    // }
+    // Eigen::Vector4f bg_color = {1.0, 1.0, 1.0, 1.0};
+    // visualizer->SetBackground(bg_color);
+    // visualizer->ShowSettings(true);
+    // visualizer->ResetCameraToDefault();
+    // visualization::gui::Application::GetInstance().AddWindow(visualizer);
 
     ///////////////////////////
     // reconstruction thread //
     ///////////////////////////
-    // std::thread update_thread(UpdateSingleMesh, visualizer, &color_img_list, &depth_img_list);
-    // std::thread update_thread(UpdateMultiMesh, visualizer, &color_img_list, &depth_img_list, &cv_color_img_list, &cv_depth_img_list);
 
-    o3d_app.Run();
-    // update_thread.join();
+    // o3d_app.Run();
 
     for (unsigned i = 0; i < NUM_THREADS; i++)
     {
         pthread_join(threads[i], NULL);
     }
-
-    // closing the listening socket
-    shutdown(server_fd, SHUT_RDWR);
-    // printf("Last error was: %s\n", get_error_text());
     return 1;
 }

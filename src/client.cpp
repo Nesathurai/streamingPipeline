@@ -478,6 +478,7 @@ int draco_to_open3d(open3d::geometry::TriangleMesh *outOpen3d, draco::EncoderBuf
         printf("success\n");
     }
     // delta("decoding time");
+    // delta("decoding time");
     return 0;
 }
 
@@ -627,6 +628,9 @@ static void *recieve(void *data)
                 }
                 std::this_thread::sleep_for(std::chrono::milliseconds(5));
             }
+            else
+            {
+                printf("valread = -1 -> socket error 2\n");
             else
             {
                 printf("valread = -1 -> socket error 2\n");
