@@ -33,7 +33,8 @@ target_link_libraries(reconstruction -Wl,--whole-archive draco -Wl,--no-whole-ar
                         ${OpenCV_LIBS})
 
 target_link_libraries(client -Wl,--whole-archive draco -Wl,--no-whole-archive
-                        Open3D::Open3D)
+                        Open3D::Open3D
+                        -fopenmp)
 
 target_compile_options(client PUBLIC
   #"-Werror" # Do not comment this out after Project 8!
@@ -61,7 +62,7 @@ target_compile_options(client PUBLIC
 
   target_compile_options(reconstruction PUBLIC
   #"-Werror" # Do not comment this out after Project 8!
-  #"-ggdb"
+  "-ggdb"
   "-O3"
   #"-Wunreachable-code"
   #"-g"
