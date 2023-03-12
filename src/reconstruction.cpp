@@ -55,7 +55,7 @@ const char *get_error_text()
 #endif
 }
 #define MAXTRANSMIT 1500
-#define PORT 60000
+#define PORT 8080
 #define NUM_THREADS 3
 
 using std::chrono::duration;
@@ -354,6 +354,9 @@ static void *transmitDataWrapper(void *data)
         perror("socket failed");
         exit(EXIT_FAILURE);
     }
+    else{
+        std::cout << "socket num: " << server_fd << std::endl;
+    }
 
     // Forcefully attaching socket to the port 8080
     if (setsockopt(server_fd, SOL_SOCKET,
@@ -432,20 +435,17 @@ void generateMeshAndTransmit(std::vector<t::geometry::Image> *color_img_list, st
     high_resolution_clock::time_point fpsStart = high_resolution_clock::now();
     duration<double, std::milli> fpsDel;
     int fpsCounter = 0;
+    int counter = 0;
     delta("frame capture period");
     while (1)
     {
         // std::this_thread::sleep_for(std::chrono::milliseconds(30));
         if (img_lock.try_lock())
         {
-            // TODO: some sort of slowdown here 
-            // t::geometry::VoxelBlockGrid voxel_grid({"tsdf", "weight"},
-            //                                        {core::Dtype::Float32, core::Dtype::Float32},
-            //                                        {{1}, {1}}, voxel_size, 16, block_count, gpu_device);
             t::geometry::VoxelBlockGrid voxel_grid({"tsdf", "weight"},
                                                    {core::Dtype::Float32, core::Dtype::Float32},
                                                    {{1}, {1}}, voxel_size, 16, block_count, gpu_device);
-            // texture_img = color_img_list->at(0);
+            texture_img = color_img_list->at(0);
             for (int i = 0; i < device_count; i++)
             {
                 core::Tensor frustum_block_coords = voxel_grid.GetUniqueBlockCoordinates(depth_img_list->at(0), intrinsic_list.at(0),
@@ -455,12 +455,25 @@ void generateMeshAndTransmit(std::vector<t::geometry::Image> *color_img_list, st
                                      depth_scale, depth_max, trunc_voxel_multiplier);
             }
             img_lock.unlock();
-            
 
             mesh = voxel_grid.ExtractTriangleMesh(0, -1).To(cpu_device);
+
+            material.SetAlbedoMap(texture_img);
+            mesh.SetMaterial(material);
+
+            char outMesh[1024] = {0};
+            char outText[1024] = {0};
+            sprintf(outMesh, "/home/sc/streamingPipeline/analysisData/frame_%d.obj", counter);
+            sprintf(outText, "/home/sc/streamingPipeline/analysisData/frame_%d.png", counter);
+            counter++;
+            
+            open3d::t::io::WriteTriangleMesh(outMesh, mesh, false, false, true, true, true, true);
+            open3d::t::io::WriteImageToJPG(outText,texture_img,9);
+
             mesh.RemoveVertexAttr("normals");
-            // material.SetAlbedoMap(texture_img);
-            // mesh.SetMaterial(material);
+
+            std::cout << mesh.ToString() << std::endl;
+
 
             // convert from tensor to legacy (regular triangle mesh)
             // use semaphore because socket thread is waiting
