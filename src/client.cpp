@@ -631,9 +631,6 @@ static void *recieve(void *data)
             else
             {
                 printf("valread = -1 -> socket error 2\n");
-            else
-            {
-                printf("valread = -1 -> socket error 2\n");
             }
         }
         else

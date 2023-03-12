@@ -1,0 +1,1 @@
+/usr/bin/c++ CMakeFiles/client.dir/src/client.cpp.o -o client  -Wl,-rpath,/home/sc/open3d_install_0.16.0/lib -Wl,--whole-archive -ldraco -Wl,--no-whole-archive /home/sc/open3d_install_0.16.0/lib/libOpen3D.so -fopenmp 
