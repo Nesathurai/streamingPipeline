@@ -7,7 +7,7 @@
 #include <kinect_capture.hpp>
 #include <cstdlib>
 
-#define COLOR_EXPOSURE_USEC 8000
+#define COLOR_EXPOSURE_USEC 800000
 #define POWERLINE_FREQ 2
 
 constexpr std::chrono::microseconds MAX_ALLOWABLE_TIME_OFFSET_ERROR_FOR_IMAGE_TIMESTAMP(500);

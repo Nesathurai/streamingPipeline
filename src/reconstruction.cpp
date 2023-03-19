@@ -22,6 +22,7 @@
 #include <unistd.h>
 #include <pthread.h>
 #include <netdb.h>
+#include <inttypes.h>
 
 #include "draco/compression/encode.h"
 #include "draco/core/cycle_timer.h"
@@ -121,13 +122,15 @@ typedef struct
 {
     std::vector<t::geometry::Image> *color_img_list;
     std::vector<t::geometry::Image> *depth_img_list;
+    MultiKinectCapture *multi_cap;
     int id;
 } generateMesh_args_t;
 
-constexpr float voxel_size = 0.011; // default 0.01
+float voxel_size = 0.01; // default 0.01 - optimal is 0.011 in meters
 constexpr int block_count = 10000;
 constexpr float depth_max = 5.0; // default 5.0
 constexpr float trunc_voxel_multiplier = 8.0;
+int num_frames = -1;
 
 static std::vector<core::Tensor> extrinsic_tf_list;
 static std::vector<core::Tensor> intrinsic_list;
@@ -354,7 +357,8 @@ static void *transmitDataWrapper(void *data)
         perror("socket failed");
         exit(EXIT_FAILURE);
     }
-    else{
+    else
+    {
         std::cout << "socket num: " << server_fd << std::endl;
     }
 
@@ -423,7 +427,7 @@ static void *transmitDataWrapper(void *data)
     return NULL;
 }
 
-void generateMeshAndTransmit(std::vector<t::geometry::Image> *color_img_list, std::vector<t::geometry::Image> *depth_img_list)
+void generateMeshAndTransmit(std::vector<t::geometry::Image> *color_img_list, std::vector<t::geometry::Image> *depth_img_list, MultiKinectCapture *multi_cap)
 {
     visualization::rendering::Material material("defaultLit");
     material.SetDefaultProperties();
@@ -437,7 +441,7 @@ void generateMeshAndTransmit(std::vector<t::geometry::Image> *color_img_list, st
     int fpsCounter = 0;
     int counter = 0;
     delta("frame capture period");
-    while (1)
+    while (1 && (num_frames > 0))
     {
         // std::this_thread::sleep_for(std::chrono::milliseconds(30));
         if (img_lock.try_lock())
@@ -458,22 +462,26 @@ void generateMeshAndTransmit(std::vector<t::geometry::Image> *color_img_list, st
 
             mesh = voxel_grid.ExtractTriangleMesh(0, -1).To(cpu_device);
 
+            mesh_uv_mapping(&(mesh), intrinsic_list.at(0), extrinsic_tf_list.at(0));
             material.SetAlbedoMap(texture_img);
             mesh.SetMaterial(material);
 
             char outMesh[1024] = {0};
             char outText[1024] = {0};
-            sprintf(outMesh, "/home/sc/streamingPipeline/analysisData/frame_%d.obj", counter);
-            sprintf(outText, "/home/sc/streamingPipeline/analysisData/frame_%d.png", counter);
+            sprintf(outMesh, "/home/sc/streamingPipeline/analysisData/frame_%d_vx_%f.obj", counter, voxel_size);
+            sprintf(outText, "/home/sc/streamingPipeline/analysisData/frame_%d_vx_%f.jpg", counter, voxel_size);
             counter++;
-            
+
+            // std::cout << "uvs: " << mesh.texture_uvs.GetLength()  << std::endl;
+
             open3d::t::io::WriteTriangleMesh(outMesh, mesh, false, false, true, true, true, true);
-            open3d::t::io::WriteImageToJPG(outText,texture_img,9);
+            // open3d::t::io::WriteImageToJPG(outText,texture_img,9);
+            cv::cvtColor(multi_cap->capture_devices.at(0)->cv_color_img, multi_cap->capture_devices.at(0)->cv_color_img, cv::COLOR_BGR2RGB);
+            cv::imwrite(outText, multi_cap->capture_devices.at(0)->cv_color_img);
 
             mesh.RemoveVertexAttr("normals");
 
             std::cout << mesh.ToString() << std::endl;
-
 
             // convert from tensor to legacy (regular triangle mesh)
             // use semaphore because socket thread is waiting
@@ -492,25 +500,28 @@ void generateMeshAndTransmit(std::vector<t::geometry::Image> *color_img_list, st
                 printf("conversion to legacy mesh FAILED\n");
             }
             delta("frame time");
-            if(fpsCounter % 30 == 0){
-                fpsDel = (high_resolution_clock::now()-fpsStart)/1000;
-                printf("fps: %f\n",((30)/(fpsDel.count())));
+            if (fpsCounter % 30 == 0)
+            {
+                fpsDel = (high_resolution_clock::now() - fpsStart) / 1000;
+                printf("fps: %f\n", ((30) / (fpsDel.count())));
                 fpsStart = high_resolution_clock::now();
             }
             fpsCounter++;
+            num_frames--;
         }
-        else{
+        else
+        {
             std::this_thread::sleep_for(std::chrono::milliseconds(5));
         }
-        
     }
+    exit(EXIT_SUCCESS);
 }
 
 static void *generateMeshAndTransmitWrapper(void *data)
 {
     // calls generate mesh and transmit (the function that grabs frames that were generated and converts to mesh)
     generateMesh_args_t *args = (generateMesh_args_t *)data;
-    generateMeshAndTransmit(args->color_img_list, args->depth_img_list);
+    generateMeshAndTransmit(args->color_img_list, args->depth_img_list, args->multi_cap);
     return NULL;
 }
 
@@ -519,8 +530,6 @@ void startCam(MultiKinectCapture *multi_cap, std::vector<t::geometry::Image> *co
               std::vector<cv::Mat> *cv_color_img_list, std::vector<cv::Mat> *cv_depth_img_list)
 {
     std::cout << "Found " << k4a_device_get_installed_count() << " connected devices" << std::endl;
-
-    multi_cap = new MultiKinectCapture(device_count, -80, true);
 
     camera::PinholeCameraIntrinsic intrinsic;
     for (uint32_t i = 0; i < device_count; i++)
@@ -561,10 +570,32 @@ int main(int argc, char **argv)
     pthread_t threads[NUM_THREADS];
     args_t args[NUM_THREADS];
 
+    // set parameters for scripting
+    if (argc <= 1)
+    {
+        std::cerr << "Usage: " << argv[0] << " voxel_size (optional) " << std::endl;
+        std::cout << "Using defaults: "
+                  << "Number of frames"
+                  << "Unlimited "
+                  << "voxel size: "
+                  << "0.01m" << std::endl;
+    }
+    else if (argc == 2)
+    {
+        num_frames = std::stoi(argv[1]);
+        std::cout << "Number of frames: " << num_frames << std::endl;
+    }
+    else if (argc == 3)
+    {
+        num_frames = std::stoi(argv[1]);
+        voxel_size = std::stof(argv[2]);
+        std::cout << "Number of frames: " << num_frames << "voxel size updated: " << voxel_size << std::endl;
+    }
+
     //////////////////////////
     //     start cameras    //
     //////////////////////////
-    MultiKinectCapture *multi_cap;
+    MultiKinectCapture *multi_cap = new MultiKinectCapture(device_count, -80, true);
     std::vector<t::geometry::Image> color_img_list(device_count);
     std::vector<t::geometry::Image> depth_img_list(device_count);
     std::vector<cv::Mat> cv_color_img_list(device_count);
@@ -593,6 +624,7 @@ int main(int argc, char **argv)
     generateMesh_args_t generateMesh_args;
     generateMesh_args.color_img_list = &color_img_list;
     generateMesh_args.depth_img_list = &depth_img_list;
+    generateMesh_args.multi_cap = multi_cap;
     generateMesh_args.id = 2;
     pthread_create(&threads[2], NULL, generateMeshAndTransmitWrapper, &generateMesh_args);
 
