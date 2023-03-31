@@ -26,60 +26,79 @@ add_executable(client
     src/client.cpp
 )
 
+add_executable(extractMesh
+    src/extractMesh.cpp
+    src/kinect_capture.cpp
+    src/camera_alignment.cpp
+    src/multi_kinect_capture.cpp
+    src/util.cpp
+    src/texture_mapping.cpp
+    include/cv_convert_util.hpp
+)
+
+add_executable(extractPC
+    src/extractPC.cpp
+    src/kinect_capture.cpp
+    src/camera_alignment.cpp
+    src/multi_kinect_capture.cpp
+    src/util.cpp
+    src/texture_mapping.cpp
+    include/cv_convert_util.hpp
+)
+
+add_executable(mergePC
+    src/mergePC.cpp
+    src/kinect_capture.cpp
+    src/camera_alignment.cpp
+    src/multi_kinect_capture.cpp
+    src/util.cpp
+    src/texture_mapping.cpp
+    include/cv_convert_util.hpp
+)
+
+
 target_link_libraries(reconstruction -Wl,--whole-archive draco -Wl,--no-whole-archive
                         Open3D::Open3D
                         apriltag::apriltag
                         k4a::k4a
                         ${OpenCV_LIBS})
-
+                        
 target_link_libraries(client -Wl,--whole-archive draco -Wl,--no-whole-archive
+                        Open3D::Open3D)
+
+target_link_libraries(extractMesh -Wl,--whole-archive draco -Wl,--no-whole-archive
                         Open3D::Open3D
-                        -fopenmp)
+                        apriltag::apriltag
+                        k4a::k4a
+                        ${OpenCV_LIBS})
+
+target_link_libraries(extractPC -Wl,--whole-archive draco -Wl,--no-whole-archive
+                        Open3D::Open3D
+                        apriltag::apriltag
+                        k4a::k4a
+                        ${OpenCV_LIBS})
+
+                        
+target_link_libraries(mergePC -Wl,--whole-archive draco -Wl,--no-whole-archive
+                        Open3D::Open3D
+                        apriltag::apriltag
+                        k4a::k4a
+                        ${OpenCV_LIBS})
 
 target_compile_options(client PUBLIC
-  #"-Werror" # Do not comment this out after Project 8!
-  #"-ggdb"
   "-O3"
-  #"-Wunreachable-code"
-  #"-g"
-  #"-Wextra"
-  #"-Wall"
-  #"-Wfloat-equal"
-  #"-Wconversion"
-  #"-Wparentheses"
-  #"-pedantic"
-  #"-Wunused-parameter"
-  #"-Wunused-variable"
-  #"-Wreturn-type"
-  #"-Wunused-function"
-  #"-Wredundant-decls"
-  #"-Wreturn-type"
-  #"-Wredundant-decls"
-  #"-Wunused-value"
-  #"-Wswitch-default"
-  #"-Wuninitialized" "-Winit-self"
   )
 
-  target_compile_options(reconstruction PUBLIC
-  #"-Werror" # Do not comment this out after Project 8!
+target_compile_options(extractMesh PUBLIC
+  "-O3"
+  )
+target_compile_options(extractPC PUBLIC
+  "-O3"
+  )
+target_compile_options(mergePC PUBLIC
+  "-O3"
+  )
+target_compile_options(reconstruction PUBLIC
   "-ggdb"
   "-O3"
-  #"-Wunreachable-code"
-  #"-g"
-  #"-Wextra"
-  #"-Wall"
-  #"-Wfloat-equal"
-  #"-Wconversion"
-  #"-Wparentheses"
-  #"-pedantic"
-  #"-Wunused-parameter"
-  #"-Wunused-variable"
-  #"-Wreturn-type"
-  #"-Wunused-function"
-  #"-Wredundant-decls"
-  #"-Wreturn-type"
-  #"-Wredundant-decls"
-  #"-Wunused-value"
-  #"-Wswitch-default"
-  #"-Wuninitialized" "-Winit-self"
   )

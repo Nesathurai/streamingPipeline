@@ -1,4 +1,7 @@
 /home/sc/streamingPipeline/build/CMakeFiles/reconstruction.dir
 /home/sc/streamingPipeline/build/CMakeFiles/client.dir
+/home/sc/streamingPipeline/build/CMakeFiles/extractMesh.dir
+/home/sc/streamingPipeline/build/CMakeFiles/extractPC.dir
+/home/sc/streamingPipeline/build/CMakeFiles/mergePC.dir
 /home/sc/streamingPipeline/build/CMakeFiles/edit_cache.dir
 /home/sc/streamingPipeline/build/CMakeFiles/rebuild_cache.dir

@@ -57,7 +57,7 @@ const char *get_error_text()
 }
 #define MAXTRANSMIT 1500
 #define PORT 8080
-#define NUM_THREADS 3
+#define NUM_THREADS 2
 
 using std::chrono::duration;
 using std::chrono::high_resolution_clock;
@@ -116,6 +116,9 @@ typedef struct
     int counter;
     int port;
     int id;
+    int totalImageFrames;
+    int totalDepthFrames;
+    int cameraIdx;
 } transmit_args_t;
 
 typedef struct
@@ -130,12 +133,14 @@ float voxel_size = 0.01; // default 0.01 - optimal is 0.011 in meters
 constexpr int block_count = 10000;
 constexpr float depth_max = 5.0; // default 5.0
 constexpr float trunc_voxel_multiplier = 8.0;
-int num_frames = -1;
+int totalFrames[] = {-1,-1,-1,-1};
+int totalImageFrames[] = {300, 300, 300, 300};
+int totalDepthFrames[] = {300, 300, 300, 300};
 
 static std::vector<core::Tensor> extrinsic_tf_list;
 static std::vector<core::Tensor> intrinsic_list;
 
-uint32_t device_count = 1;
+uint32_t device_count = 4;
 std::mutex img_lock;
 
 bool enableDebugging = 0;
@@ -147,6 +152,11 @@ int server_fd, new_socket, valread;
 struct sockaddr_in address;
 
 circular_buffer<open3d::geometry::TriangleMesh, 100> meshes;
+circular_buffer<cv::Mat, 500> imageBuffer[4];
+circular_buffer<cv::Mat, 500> depthBuffer[4];
+int saveThreadsFinished = 0;
+
+int cameraNum = 0;
 
 open3d::geometry::TriangleMesh transmitMesh;
 
@@ -427,6 +437,66 @@ static void *transmitDataWrapper(void *data)
     return NULL;
 }
 
+static void *saveDataWrapper(void *data)
+{
+    transmit_args_t *args = (transmit_args_t *)data;
+
+    int imageIdx = 0;
+    int depthIdx = 0;
+
+    char outText[1024] = {0};
+    char outDepth[1024] = {0};
+
+    // only transmit when signal is recieved
+    // while (1)
+    while (1)
+    {
+        if(args->totalImageFrames == imageIdx && args->totalDepthFrames == depthIdx)
+        {
+            
+            saveThreadsFinished++;
+            return NULL;
+        }
+        else{
+            std::cout << "frames to save: " << args->totalImageFrames- imageIdx << " ; " << args->totalDepthFrames - depthIdx << std::endl;
+        }
+        
+        // if image or depth frame are available, then save
+        if (!imageBuffer[args->cameraIdx].empty() )
+        {
+            // pthread_cond_wait(&cond1, &lock1);
+            // with 0 decimation, transmission takes about 0.02s - 50fps
+            cv::Mat imgMat = imageBuffer[args->cameraIdx].get().value();
+            sprintf(outText, "/home/sc/streamingPipeline/analysisData/ref/frame_%d_camera_%d_color.png", imageIdx, args->cameraIdx);
+            cv::Mat imgMatOut;
+            cv::cvtColor(imgMat, imgMatOut, cv::COLOR_BGR2RGB);
+            cv::imwrite(outText, imgMatOut);
+            imageIdx++;
+        }
+        else
+        {
+            std::this_thread::sleep_for(std::chrono::milliseconds(5));
+        }
+
+        if (!depthBuffer[args->cameraIdx].empty())
+        {
+
+            cv::Mat depthMat = depthBuffer[args->cameraIdx].get().value();
+            sprintf(outDepth, "/home/sc/streamingPipeline/analysisData/ref/frame_%d_camera_%d_depth.png", depthIdx, args->cameraIdx);
+            cv::imwrite(outDepth, depthMat);
+            depthIdx++;
+        }
+        else
+        {
+            std::this_thread::sleep_for(std::chrono::milliseconds(5));
+        }
+        //  may run into some asynchronous problems with the depth and image frames being saved out of order
+        // TODO -
+    }
+    // exit(EXIT_SUCCESS);
+    return NULL;
+}
+
 void generateMeshAndTransmit(std::vector<t::geometry::Image> *color_img_list, std::vector<t::geometry::Image> *depth_img_list, MultiKinectCapture *multi_cap)
 {
     visualization::rendering::Material material("defaultLit");
@@ -441,80 +511,96 @@ void generateMeshAndTransmit(std::vector<t::geometry::Image> *color_img_list, st
     int fpsCounter = 0;
     int counter = 0;
     delta("frame capture period");
-    while (1 && (num_frames > 0))
+    while (1 && ((totalFrames[0] > 0) || (totalFrames[0] == -1)))
     {
         // std::this_thread::sleep_for(std::chrono::milliseconds(30));
-        if (img_lock.try_lock())
+        // if (img_lock.try_lock())
+        // {
+        // t::geometry::VoxelBlockGrid voxel_grid({"tsdf", "weight"},
+        //                                        {core::Dtype::Float32, core::Dtype::Float32},
+        //                                        {{1}, {1}}, voxel_size, 16, block_count, gpu_device);
+        // texture_img = color_img_list->at(0);
+
+        // for (int i = 0; i < device_count; i++)
+        // {
+        //     core::Tensor frustum_block_coords = voxel_grid.GetUniqueBlockCoordinates(depth_img_list->at(0), intrinsic_list.at(0),
+        //                                                                              extrinsic_tf_list.at(0), depth_scale,
+        //                                                                              depth_max, trunc_voxel_multiplier);
+        // voxel_grid.Integrate(frustum_block_coords, depth_img_list->at(0), intrinsic_list.at(0), extrinsic_tf_list.at(0),
+        //                      depth_scale, depth_max, trunc_voxel_multiplier);
+        // }
+        // img_lock.unlock();
+
+        // mesh = voxel_grid.ExtractTriangleMesh(0, -1).To(cpu_device);
+
+        // mesh_uv_mapping(&(mesh), intrinsic_list.at(0), extrinsic_tf_list.at(0));
+        // material.SetAlbedoMap(texture_img);
+        // mesh.SetMaterial(material);
+
+        // char outMesh[1024] = {0};
+        // char outText[1024] = {0};
+        // char outDepth[1024] = {0};
+        // char outPointCloud[1024] = {0};
+        // sprintf(outMesh, "/home/sc/streamingPipeline/analysisData/vx_%.05f/vx_%f_frame_%d.obj", voxel_size, voxel_size, counter);
+        // sprintf(outText, "/home/sc/streamingPipeline/analysisData/vx_%.05f/vx_%f_frame_%d_color.png", voxel_size, voxel_size, counter);
+        // sprintf(outDepth, "/home/sc/streamingPipeline/analysisData/vx_%.05f/vx_%f_frame_%d_depth.png", voxel_size, voxel_size, counter);
+        // sprintf(outPointCloud, "/home/sc/streamingPipeline/analysisData/vx_%.05f/vx_%f_frame_%d_ptc.obj", voxel_size, voxel_size, counter);
+        // counter++;
+        // std::cout << outMesh << std::endl;
+
+        // std::cout << "uvs: " << mesh.texture_uvs.GetLength()  << std::endl;
+
+        // open3d::t::io::WriteTriangleMesh(outMesh, mesh, false, false, true, true, true, true);
+        // open3d::t::io::WriteImageToJPG(outText,texture_img,9);
+        // cv::cvtColor(multi_cap->capture_devices.at(0)->cv_color_img, multi_cap->capture_devices.at(0)->cv_color_img, cv::COLOR_BGR2RGB);
+        // cv::imwrite(outText, multi_cap->capture_devices.at(0)->cv_color_img);
+        // cv::imwrite(outDepth, multi_cap->capture_devices.at(0)->cv_depth_img);
+
+        for (int i = 0; i < device_count; i++)
         {
-            t::geometry::VoxelBlockGrid voxel_grid({"tsdf", "weight"},
-                                                   {core::Dtype::Float32, core::Dtype::Float32},
-                                                   {{1}, {1}}, voxel_size, 16, block_count, gpu_device);
-            texture_img = color_img_list->at(0);
-            for (int i = 0; i < device_count; i++)
-            {
-                core::Tensor frustum_block_coords = voxel_grid.GetUniqueBlockCoordinates(depth_img_list->at(0), intrinsic_list.at(0),
-                                                                                         extrinsic_tf_list.at(0), depth_scale,
-                                                                                         depth_max, trunc_voxel_multiplier);
-                voxel_grid.Integrate(frustum_block_coords, depth_img_list->at(0), intrinsic_list.at(0), extrinsic_tf_list.at(0),
-                                     depth_scale, depth_max, trunc_voxel_multiplier);
-            }
-            img_lock.unlock();
-
-            mesh = voxel_grid.ExtractTriangleMesh(0, -1).To(cpu_device);
-
-            mesh_uv_mapping(&(mesh), intrinsic_list.at(0), extrinsic_tf_list.at(0));
-            material.SetAlbedoMap(texture_img);
-            mesh.SetMaterial(material);
-
-            char outMesh[1024] = {0};
-            char outText[1024] = {0};
-            sprintf(outMesh, "/home/sc/streamingPipeline/analysisData/frame_%d_vx_%f.obj", counter, voxel_size);
-            sprintf(outText, "/home/sc/streamingPipeline/analysisData/frame_%d_vx_%f.jpg", counter, voxel_size);
-            counter++;
-
-            // std::cout << "uvs: " << mesh.texture_uvs.GetLength()  << std::endl;
-
-            open3d::t::io::WriteTriangleMesh(outMesh, mesh, false, false, true, true, true, true);
-            // open3d::t::io::WriteImageToJPG(outText,texture_img,9);
-            cv::cvtColor(multi_cap->capture_devices.at(0)->cv_color_img, multi_cap->capture_devices.at(0)->cv_color_img, cv::COLOR_BGR2RGB);
-            cv::imwrite(outText, multi_cap->capture_devices.at(0)->cv_color_img);
-
-            mesh.RemoveVertexAttr("normals");
-
-            std::cout << mesh.ToString() << std::endl;
-
-            // convert from tensor to legacy (regular triangle mesh)
-            // use semaphore because socket thread is waiting
-            transmitMesh = mesh.ToLegacy();
-            if (transmitMesh.vertices_.size() != 0)
-            {
-                // std::shared_ptr<open3d::geometry::TriangleMesh> decimated = transmitMesh.SimplifyVertexClustering(0.01);
-                // decimated = decimated->SimplifyQuadricDecimation(0.5*decimated->triangles_.size(), 1000000000, 1.0);
-                // std::shared_ptr<open3d::geometry::TriangleMesh> decimated = transmitMesh.SimplifyQuadricDecimation(0.5*transmitMesh.triangles_.size(), 1000000000, 1.0);
-                // meshes.put(*(decimated.get()));
-                meshes.put(transmitMesh);
-                // pthread_cond_signal(&cond1);
-            }
-            else
-            {
-                printf("conversion to legacy mesh FAILED\n");
-            }
-            delta("frame time");
-            if (fpsCounter % 30 == 0)
-            {
-                fpsDel = (high_resolution_clock::now() - fpsStart) / 1000;
-                printf("fps: %f\n", ((30) / (fpsDel.count())));
-                fpsStart = high_resolution_clock::now();
-            }
-            fpsCounter++;
-            num_frames--;
+            imageBuffer[i].put(multi_cap->capture_devices.at(i)->cv_color_img);
+            depthBuffer[i].put(multi_cap->capture_devices.at(i)->cv_depth_img);
         }
-        else
+
+        // mesh.RemoveVertexAttr("normals");
+
+        // std::cout << mesh.ToString() << std::endl;
+
+        // convert from tensor to legacy (regular triangle mesh)
+        // use semaphore because socket thread is waiting
+        // transmitMesh = mesh.ToLegacy();
+        // if (transmitMesh.vertices_.size() != 0)
+        // {
+        // std::shared_ptr<open3d::geometry::TriangleMesh> decimated = transmitMesh.SimplifyVertexClustering(0.01);
+        // decimated = decimated->SimplifyQuadricDecimation(0.5*decimated->triangles_.size(), 1000000000, 1.0);
+        // std::shared_ptr<open3d::geometry::TriangleMesh> decimated = transmitMesh.SimplifyQuadricDecimation(0.5*transmitMesh.triangles_.size(), 1000000000, 1.0);
+        // meshes.put(*(decimated.get()));
+        // meshes.put(transmitMesh);
+        // pthread_cond_signal(&cond1);
+        // }
+        // else
+        // {
+        //     printf("conversion to legacy mesh FAILED\n");
+        // }
+        delta("frame time");
+        if (fpsCounter % 30 == 0)
         {
-            std::this_thread::sleep_for(std::chrono::milliseconds(5));
+            fpsDel = (high_resolution_clock::now() - fpsStart) / 1000;
+            printf("fps: %f\n", ((30) / (fpsDel.count())));
+            fpsStart = high_resolution_clock::now();
         }
+        fpsCounter++;
+        if (totalFrames[0] != -1)
+        {
+            totalFrames[0]--;
+        }
+        // }
+        // else
+        // {
+        //     std::this_thread::sleep_for(std::chrono::milliseconds(5));
+        // }
     }
-    exit(EXIT_SUCCESS);
+    // return NULL;
 }
 
 static void *generateMeshAndTransmitWrapper(void *data)
@@ -530,7 +616,7 @@ void startCam(MultiKinectCapture *multi_cap, std::vector<t::geometry::Image> *co
               std::vector<cv::Mat> *cv_color_img_list, std::vector<cv::Mat> *cv_depth_img_list)
 {
     std::cout << "Found " << k4a_device_get_installed_count() << " connected devices" << std::endl;
-
+    device_count = k4a_device_get_installed_count();
     camera::PinholeCameraIntrinsic intrinsic;
     for (uint32_t i = 0; i < device_count; i++)
     {
@@ -567,8 +653,8 @@ static void *startCamWrapper(void *data)
 
 int main(int argc, char **argv)
 {
-    pthread_t threads[NUM_THREADS];
-    args_t args[NUM_THREADS];
+    pthread_t threads[NUM_THREADS+4];
+    args_t args[NUM_THREADS+4];
 
     // set parameters for scripting
     if (argc <= 1)
@@ -577,25 +663,34 @@ int main(int argc, char **argv)
         std::cout << "Using defaults: "
                   << "Number of frames"
                   << "Unlimited "
-                  << "voxel size: "
-                  << "0.01m" << std::endl;
+                  << "camera number: "
+                  << "0" << std::endl;
     }
     else if (argc == 2)
     {
-        num_frames = std::stoi(argv[1]);
-        std::cout << "Number of frames: " << num_frames << std::endl;
+        for (int i = 0; i < 4; i++)
+        {
+            totalFrames[i] = std::stoi(argv[1]);
+            totalImageFrames[i] = std::stoi(argv[1]);
+            totalDepthFrames[i] = std::stoi(argv[1]);
+        }
+        std::cout << "Number of frames: " << totalFrames[0] << std::endl;
     }
-    else if (argc == 3)
-    {
-        num_frames = std::stoi(argv[1]);
-        voxel_size = std::stof(argv[2]);
-        std::cout << "Number of frames: " << num_frames << "voxel size updated: " << voxel_size << std::endl;
-    }
+    // else if (argc == 3)
+    // {
+    //     for(int i = 0; i < 4; i++){
+    //     totalFrames[i] = std::stoi(argv[1]);
+    //     totalImageFrames[i] = std::stoi(argv[1]);
+    //     totalDepthFrames[i] = std::stoi(argv[1]);
+    //     }
+    //     // cameraNum = std::stof(argv[2]);
+    //     std::cout << "Number of frames: " << num_frames << "camera number updated: " << voxel_size << std::endl;
+    // }
 
     //////////////////////////
     //     start cameras    //
     //////////////////////////
-    MultiKinectCapture *multi_cap = new MultiKinectCapture(device_count, -80, true);
+    MultiKinectCapture *multi_cap = new MultiKinectCapture(device_count);
     std::vector<t::geometry::Image> color_img_list(device_count);
     std::vector<t::geometry::Image> depth_img_list(device_count);
     std::vector<cv::Mat> cv_color_img_list(device_count);
@@ -611,22 +706,28 @@ int main(int argc, char **argv)
     pthread_create(&threads[0], NULL, startCamWrapper, &start_cam_args);
 
     ///////////////////////////
-    // create server socket  //
-    ///////////////////////////
-    transmit_args_t transmit_args;
-    transmit_args.port = PORT;
-    transmit_args.id = 1;
-    pthread_create(&threads[1], NULL, transmitDataWrapper, &transmit_args);
-
-    ///////////////////////////
     // get new frames, mesh  //
     ///////////////////////////
     generateMesh_args_t generateMesh_args;
     generateMesh_args.color_img_list = &color_img_list;
     generateMesh_args.depth_img_list = &depth_img_list;
     generateMesh_args.multi_cap = multi_cap;
-    generateMesh_args.id = 2;
-    pthread_create(&threads[2], NULL, generateMeshAndTransmitWrapper, &generateMesh_args);
+    generateMesh_args.id = 1;
+    pthread_create(&threads[1], NULL, generateMeshAndTransmitWrapper, &generateMesh_args);
+
+    ///////////////////////////
+    // create server socket  //
+    ///////////////////////////
+    // saving data 
+    transmit_args_t transmit_args[4];
+    for(int i = 0; i < 4; i++){
+        transmit_args[i].port = PORT;
+        transmit_args[i].id = i;
+        transmit_args[i].cameraIdx = i;
+        transmit_args[i].totalImageFrames = totalImageFrames[0];
+        transmit_args[i].totalDepthFrames = totalDepthFrames[0];
+        pthread_create(&threads[2+i], NULL, saveDataWrapper, &transmit_args[i]);
+    }
 
     //////////////////////////
     // visualization window //
@@ -648,8 +749,11 @@ int main(int argc, char **argv)
 
     // o3d_app.Run();
 
-    for (unsigned i = 0; i < NUM_THREADS; i++)
+    for (unsigned i = 2; i < NUM_THREADS+4; i++)
     {
+        if(saveThreadsFinished == device_count){
+            exit(EXIT_SUCCESS);
+        }
         pthread_join(threads[i], NULL);
     }
     return 1;

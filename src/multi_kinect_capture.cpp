@@ -9,20 +9,20 @@ uint32_t MultiKinectCapture::get_num_devices() {
 }
 
 void MultiKinectCapture::start_cameras() {
-    // // start subordinate devices first
-    // for (uint32_t i = 1; i < get_num_devices(); i++) {
-    //     kinect_capture *cap_subordinate = this->capture_devices.at(i);
-    //     cap_subordinate->device.start_cameras(&(cap_subordinate->config));
-    // }
+    // start subordinate devices first
+    for (uint32_t i = 1; i < get_num_devices(); i++) {
+        kinect_capture *cap_subordinate = this->capture_devices.at(i);
+        cap_subordinate->device.start_cameras(&(cap_subordinate->config));
+    }
 
-    // // start master device last
-    // kinect_capture *cap_master = this->capture_devices.at(0);
-    // cap_master->device.start_cameras(&(cap_master->config));
+    // start master device last
+    kinect_capture *cap_master = this->capture_devices.at(0);
+    cap_master->device.start_cameras(&(cap_master->config));
     
-    // std::cout << "All kinect devices have started." << std::endl;
+    std::cout << "All kinect devices have started." << std::endl;
 
-    kinect_capture *cap = this->capture_devices.at(0);
-    cap->device.start_cameras(&(cap->config));
+    // kinect_capture *cap = this->capture_devices.at(0);
+    // cap->device.start_cameras(&(cap->config));
 }
 
 void MultiKinectCapture::get_synchronized_captures() {

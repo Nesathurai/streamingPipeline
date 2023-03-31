@@ -2,14 +2,15 @@ import open3d as o3d
 import numpy as np
 import cv2
 import os
+import time
 
 isExist = os.path.exists('./render/')
 if not isExist:
    os.makedirs('./render/')
    print("The new directory is created!")
 
-mesh_model1 = o3d.io.read_triangle_model(f'/home/sc/streamingPipeline/analysisData/isometric_office/scene.gltf', print_progress=True)
-mesh_model2 = o3d.io.read_triangle_model(f'/home/sc/streamingPipeline/analysisData/isometric_office/scene.gltf', print_progress=True)
+mesh_model1 = o3d.io.read_triangle_model(f'/home/sc/isometric_office/scene.gltf', print_progress=True)
+mesh_model2 = o3d.io.read_triangle_model(f'/home/sc/isometric_office/scene.gltf', print_progress=True)
 
 h_res = 1920
 v_res = 1080
@@ -17,6 +18,11 @@ v_res = 1080
 intrinsic = np.array([[933, 0, 954],
                         [0, 933, 551],
                         [0, 0, 1]])
+
+# intrinsic1 = np.array([[1, 1, 1, 1],
+#                         [5, 1, 5, 5],
+#                         [0, 0, 1, 0],
+#                         [0, 0, 0, 1]])
 
 ToGLCamera = np.array([
     [1,  0,  0,  0],
@@ -52,6 +58,10 @@ def screenshot(window):
 
     screenshot_num += 1
 
+def tests(window):
+    screenshot(window)
+    
+
 
 def main():
     app = o3d.visualization.gui.Application.instance
@@ -60,6 +70,7 @@ def main():
     window = o3d.visualization.O3DVisualizer('Synthetic scene', width=h_res, height=v_res)
     
     window.setup_camera(intrinsic, np.identity(4), h_res, v_res)
+    # window.setup_camera(intrinsic, intrinsic1, h_res, v_res)
     window.add_geometry(f'mesh1', mesh_model1)
     window.add_geometry(f'mesh2', mesh_model2)
     window.reset_camera_to_default()
@@ -68,6 +79,13 @@ def main():
     window.add_action("screenshot", screenshot)
     app.add_window(window)
     app.run()
+    # post_to_main_thread(time.sleep(1))
+    post_to_main_thread(tests(window))
+    # screenshot(window)
+    # print("screenshot taken")
+
+    
 
 if __name__ == "__main__":
     main()
+    

@@ -65,6 +65,9 @@ CMAKE_BINARY_DIR = /home/sc/streamingPipeline/build
 # The main recursive "all" target.
 all: CMakeFiles/reconstruction.dir/all
 all: CMakeFiles/client.dir/all
+all: CMakeFiles/extractMesh.dir/all
+all: CMakeFiles/extractPC.dir/all
+all: CMakeFiles/mergePC.dir/all
 .PHONY : all
 
 # The main recursive "preinstall" target.
@@ -74,6 +77,9 @@ preinstall:
 # The main recursive "clean" target.
 clean: CMakeFiles/reconstruction.dir/clean
 clean: CMakeFiles/client.dir/clean
+clean: CMakeFiles/extractMesh.dir/clean
+clean: CMakeFiles/extractPC.dir/clean
+clean: CMakeFiles/mergePC.dir/clean
 .PHONY : clean
 
 #=============================================================================
@@ -83,7 +89,7 @@ clean: CMakeFiles/client.dir/clean
 CMakeFiles/reconstruction.dir/all:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/reconstruction.dir/build.make CMakeFiles/reconstruction.dir/depend
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/reconstruction.dir/build.make CMakeFiles/reconstruction.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/home/sc/streamingPipeline/build/CMakeFiles --progress-num=3,4,5,6,7,8,9 "Built target reconstruction"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/home/sc/streamingPipeline/build/CMakeFiles --progress-num=24,25,26,27,28,29,30 "Built target reconstruction"
 .PHONY : CMakeFiles/reconstruction.dir/all
 
 # Build rule for subdir invocation for target.
@@ -127,6 +133,84 @@ client: CMakeFiles/client.dir/rule
 CMakeFiles/client.dir/clean:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/client.dir/build.make CMakeFiles/client.dir/clean
 .PHONY : CMakeFiles/client.dir/clean
+
+#=============================================================================
+# Target rules for target CMakeFiles/extractMesh.dir
+
+# All Build rule for target.
+CMakeFiles/extractMesh.dir/all:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/extractMesh.dir/build.make CMakeFiles/extractMesh.dir/depend
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/extractMesh.dir/build.make CMakeFiles/extractMesh.dir/build
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/home/sc/streamingPipeline/build/CMakeFiles --progress-num=3,4,5,6,7,8,9 "Built target extractMesh"
+.PHONY : CMakeFiles/extractMesh.dir/all
+
+# Build rule for subdir invocation for target.
+CMakeFiles/extractMesh.dir/rule: cmake_check_build_system
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/sc/streamingPipeline/build/CMakeFiles 7
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 CMakeFiles/extractMesh.dir/all
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/sc/streamingPipeline/build/CMakeFiles 0
+.PHONY : CMakeFiles/extractMesh.dir/rule
+
+# Convenience name for target.
+extractMesh: CMakeFiles/extractMesh.dir/rule
+.PHONY : extractMesh
+
+# clean rule for target.
+CMakeFiles/extractMesh.dir/clean:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/extractMesh.dir/build.make CMakeFiles/extractMesh.dir/clean
+.PHONY : CMakeFiles/extractMesh.dir/clean
+
+#=============================================================================
+# Target rules for target CMakeFiles/extractPC.dir
+
+# All Build rule for target.
+CMakeFiles/extractPC.dir/all:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/extractPC.dir/build.make CMakeFiles/extractPC.dir/depend
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/extractPC.dir/build.make CMakeFiles/extractPC.dir/build
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/home/sc/streamingPipeline/build/CMakeFiles --progress-num=10,11,12,13,14,15,16 "Built target extractPC"
+.PHONY : CMakeFiles/extractPC.dir/all
+
+# Build rule for subdir invocation for target.
+CMakeFiles/extractPC.dir/rule: cmake_check_build_system
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/sc/streamingPipeline/build/CMakeFiles 7
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 CMakeFiles/extractPC.dir/all
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/sc/streamingPipeline/build/CMakeFiles 0
+.PHONY : CMakeFiles/extractPC.dir/rule
+
+# Convenience name for target.
+extractPC: CMakeFiles/extractPC.dir/rule
+.PHONY : extractPC
+
+# clean rule for target.
+CMakeFiles/extractPC.dir/clean:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/extractPC.dir/build.make CMakeFiles/extractPC.dir/clean
+.PHONY : CMakeFiles/extractPC.dir/clean
+
+#=============================================================================
+# Target rules for target CMakeFiles/mergePC.dir
+
+# All Build rule for target.
+CMakeFiles/mergePC.dir/all:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/mergePC.dir/build.make CMakeFiles/mergePC.dir/depend
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/mergePC.dir/build.make CMakeFiles/mergePC.dir/build
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/home/sc/streamingPipeline/build/CMakeFiles --progress-num=17,18,19,20,21,22,23 "Built target mergePC"
+.PHONY : CMakeFiles/mergePC.dir/all
+
+# Build rule for subdir invocation for target.
+CMakeFiles/mergePC.dir/rule: cmake_check_build_system
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/sc/streamingPipeline/build/CMakeFiles 7
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 CMakeFiles/mergePC.dir/all
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/sc/streamingPipeline/build/CMakeFiles 0
+.PHONY : CMakeFiles/mergePC.dir/rule
+
+# Convenience name for target.
+mergePC: CMakeFiles/mergePC.dir/rule
+.PHONY : mergePC
+
+# clean rule for target.
+CMakeFiles/mergePC.dir/clean:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/mergePC.dir/build.make CMakeFiles/mergePC.dir/clean
+.PHONY : CMakeFiles/mergePC.dir/clean
 
 #=============================================================================
 # Special targets to cleanup operation of make.

@@ -13,7 +13,7 @@ extern "C" {
 
 #define TAG_FAMILY "tag36h11"
 #define TAG_SIZE 0.15
-#define TAG_ID 3
+#define TAG_ID 9
 
 class camera_alignment {
     public:

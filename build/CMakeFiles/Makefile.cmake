@@ -73,4 +73,7 @@ set(CMAKE_MAKEFILE_PRODUCTS
 set(CMAKE_DEPEND_INFO_FILES
   "CMakeFiles/reconstruction.dir/DependInfo.cmake"
   "CMakeFiles/client.dir/DependInfo.cmake"
+  "CMakeFiles/extractMesh.dir/DependInfo.cmake"
+  "CMakeFiles/extractPC.dir/DependInfo.cmake"
+  "CMakeFiles/mergePC.dir/DependInfo.cmake"
   )
