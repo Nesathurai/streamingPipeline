@@ -56,6 +56,16 @@ add_executable(mergePC
     include/cv_convert_util.hpp
 )
 
+add_executable(mergeMesh
+    src/mergeMesh.cpp
+    src/kinect_capture.cpp
+    src/camera_alignment.cpp
+    src/multi_kinect_capture.cpp
+    src/util.cpp
+    src/texture_mapping.cpp
+    include/cv_convert_util.hpp
+)
+
 
 target_link_libraries(reconstruction -Wl,--whole-archive draco -Wl,--no-whole-archive
                         Open3D::Open3D
@@ -85,6 +95,13 @@ target_link_libraries(mergePC -Wl,--whole-archive draco -Wl,--no-whole-archive
                         k4a::k4a
                         ${OpenCV_LIBS})
 
+
+target_link_libraries(mergeMesh -Wl,--whole-archive draco -Wl,--no-whole-archive
+                        Open3D::Open3D
+                        apriltag::apriltag
+                        k4a::k4a
+                        ${OpenCV_LIBS})
+
 target_compile_options(client PUBLIC
   "-O3"
   )
@@ -96,6 +113,9 @@ target_compile_options(extractPC PUBLIC
   "-O3"
   )
 target_compile_options(mergePC PUBLIC
+  "-O3"
+  )
+target_compile_options(mergeMesh PUBLIC
   "-O3"
   )
 target_compile_options(reconstruction PUBLIC

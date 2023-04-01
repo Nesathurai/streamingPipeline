@@ -1,0 +1,3 @@
+framesPerSetting = 10 
+voxelSizes = [0.01, 0.02, 0.1]
+bitRates = ["1M", "2M", "5M", "10M", "100M"]

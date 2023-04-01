@@ -200,7 +200,7 @@ int main(int argc, char **argv)
     char outMesh[1024] = {0};
 
     // char outPointCloud[1024] = {0};
-    sprintf(outMesh, "/home/sc/streamingPipeline/analysisData/%s_vx_%f.obj", nameStr.c_str(), voxel_size);
+    sprintf(outMesh, "/home/sc/streamingPipeline/analysisData/%s_vx_%.5f.obj", nameStr.c_str(), voxel_size);
     // sprintf(outPointCloud, "/home/sc/streamingPipeline/analysisData/vx_%.05f/vx_%f_frame_%d_ptc.obj", voxel_size, voxel_size, counter);
 
     open3d::t::io::WriteTriangleMesh(outMesh, mesh, false, false, true, true, true, true);
