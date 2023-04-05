@@ -114,7 +114,7 @@ int main(int argc, char **argv)
     }
     else
     {
-        std::cerr << "Usage: " << argv[0] << " calib.png texture.png depth.png voxel_size" << std::endl;
+        std::cerr << "Usage: " << argv[0] << " calib.png texture.png depth.png" << std::endl;
         return -1;
     }
 
@@ -178,13 +178,18 @@ int main(int argc, char **argv)
                                                     cv_depth_img.cols, 1},
                                                     core::UInt16, gpu_device);
 
+    // std::shared_ptr<geometry::RGBDImage> rgbd_image_ptr = geometry::RGBDImage::CreateFromColorAndDepth(color.ToLegacy(), depth.ToLegacy(), 
+    //                                                 depth_scale, 
+    //                                                 depth_trunc,
+    //                                                 convert_rgb_to_intensity);
+    
     std::shared_ptr<geometry::RGBDImage> rgbd_image_ptr = geometry::RGBDImage::CreateFromColorAndDepth(color.ToLegacy(), depth.ToLegacy(), 
                                                     depth_scale, 
                                                     depth_trunc,
                                                     convert_rgb_to_intensity);
+
     geometry::RGBDImage *rgbd_image = rgbd_image_ptr.get();
 
-    
     std::shared_ptr<geometry::PointCloud> cloud = geometry::PointCloud::CreateFromRGBDImage(*rgbd_image, intrinsic);
     t::geometry::PointCloud cloud_t = t::geometry::PointCloud::FromLegacy(*(cloud.get()));
     t::geometry::PointCloud cloud_tf = cloud_t.Transform(extrinsic_tf.Inverse());
