@@ -4,5 +4,6 @@
 /home/sc/streamingPipeline/build/CMakeFiles/extractPC.dir
 /home/sc/streamingPipeline/build/CMakeFiles/mergePC.dir
 /home/sc/streamingPipeline/build/CMakeFiles/mergeMesh.dir
+/home/sc/streamingPipeline/build/CMakeFiles/Example.dir
 /home/sc/streamingPipeline/build/CMakeFiles/edit_cache.dir
 /home/sc/streamingPipeline/build/CMakeFiles/rebuild_cache.dir

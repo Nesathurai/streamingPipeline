@@ -122,3 +122,16 @@ target_compile_options(reconstruction PUBLIC
   "-ggdb"
   "-O3"
   )
+
+  
+add_executable(Example
+  include/rvl.h
+  include/trvl.h
+  src/example.cpp
+)
+target_link_libraries(Example
+  ${OpenCV_LIBS}
+)
+set_target_properties(Example PROPERTIES
+  CXX_STANDARD 17
+)

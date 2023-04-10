@@ -194,6 +194,19 @@ mergeMesh/fast:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/mergeMesh.dir/build.make CMakeFiles/mergeMesh.dir/build
 .PHONY : mergeMesh/fast
 
+#=============================================================================
+# Target rules for targets named Example
+
+# Build rule for target.
+Example: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 Example
+.PHONY : Example
+
+# fast build rule for target.
+Example/fast:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Example.dir/build.make CMakeFiles/Example.dir/build
+.PHONY : Example/fast
+
 src/camera_alignment.o: src/camera_alignment.cpp.o
 .PHONY : src/camera_alignment.o
 
@@ -253,6 +266,30 @@ src/client.s: src/client.cpp.s
 src/client.cpp.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/client.dir/build.make CMakeFiles/client.dir/src/client.cpp.s
 .PHONY : src/client.cpp.s
+
+src/example.o: src/example.cpp.o
+.PHONY : src/example.o
+
+# target to build an object file
+src/example.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Example.dir/build.make CMakeFiles/Example.dir/src/example.cpp.o
+.PHONY : src/example.cpp.o
+
+src/example.i: src/example.cpp.i
+.PHONY : src/example.i
+
+# target to preprocess a source file
+src/example.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Example.dir/build.make CMakeFiles/Example.dir/src/example.cpp.i
+.PHONY : src/example.cpp.i
+
+src/example.s: src/example.cpp.s
+.PHONY : src/example.s
+
+# target to generate assembly for a file
+src/example.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Example.dir/build.make CMakeFiles/Example.dir/src/example.cpp.s
+.PHONY : src/example.cpp.s
 
 src/extractMesh.o: src/extractMesh.cpp.o
 .PHONY : src/extractMesh.o
@@ -526,6 +563,7 @@ help:
 	@echo "... depend"
 	@echo "... edit_cache"
 	@echo "... rebuild_cache"
+	@echo "... Example"
 	@echo "... client"
 	@echo "... extractMesh"
 	@echo "... extractPC"
@@ -538,6 +576,9 @@ help:
 	@echo "... src/client.o"
 	@echo "... src/client.i"
 	@echo "... src/client.s"
+	@echo "... src/example.o"
+	@echo "... src/example.i"
+	@echo "... src/example.s"
 	@echo "... src/extractMesh.o"
 	@echo "... src/extractMesh.i"
 	@echo "... src/extractMesh.s"

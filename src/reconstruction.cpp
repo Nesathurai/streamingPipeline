@@ -4,6 +4,7 @@
 #include <kinect_capture.hpp>
 #include <opencv2/opencv.hpp>
 #include <cstring>
+#include <fstream>
 #include <iostream>
 #include <chrono>
 #include <camera_alignment.hpp>
@@ -453,7 +454,6 @@ static void *saveDataWrapper(void *data)
     {
         if(args->totalImageFrames == imageIdx && args->totalDepthFrames == depthIdx)
         {
-            
             saveThreadsFinished++;
             return NULL;
         }
@@ -560,7 +560,12 @@ void generateMeshAndTransmit(std::vector<t::geometry::Image> *color_img_list, st
         {
             imageBuffer[i].put(multi_cap->capture_devices.at(i)->cv_color_img);
             depthBuffer[i].put(multi_cap->capture_devices.at(i)->cv_depth_img);
+            // save depth as an 16bit int stride 
+            // depthImage
+            std::ofstream input("/home/sc/streamingPipeline/analysisData/temporal-rvl-data/bin");
+            input << multi_cap->capture_devices.at(0)->depthImage.get_buffer();
         }
+        
 
         // mesh.RemoveVertexAttr("normals");
 
@@ -617,6 +622,7 @@ void startCam(MultiKinectCapture *multi_cap, std::vector<t::geometry::Image> *co
 {
     std::cout << "Found " << k4a_device_get_installed_count() << " connected devices" << std::endl;
     device_count = k4a_device_get_installed_count();
+    // device_count = 1;
     camera::PinholeCameraIntrinsic intrinsic;
     for (uint32_t i = 0; i < device_count; i++)
     {
