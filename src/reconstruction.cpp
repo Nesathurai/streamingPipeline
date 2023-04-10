@@ -3,6 +3,7 @@
 #include "open3d/t/io/TriangleMeshIO.h"
 #include <kinect_capture.hpp>
 #include <opencv2/opencv.hpp>
+#include <k4a/k4a.hpp>
 #include <cstring>
 #include <fstream>
 #include <iostream>
@@ -134,7 +135,7 @@ float voxel_size = 0.01; // default 0.01 - optimal is 0.011 in meters
 constexpr int block_count = 10000;
 constexpr float depth_max = 5.0; // default 5.0
 constexpr float trunc_voxel_multiplier = 8.0;
-int totalFrames[] = {-1,-1,-1,-1};
+int totalFrames[] = {-1, -1, -1, -1};
 int totalImageFrames[] = {300, 300, 300, 300};
 int totalDepthFrames[] = {300, 300, 300, 300};
 
@@ -155,6 +156,7 @@ struct sockaddr_in address;
 circular_buffer<open3d::geometry::TriangleMesh, 100> meshes;
 circular_buffer<cv::Mat, 500> imageBuffer[4];
 circular_buffer<cv::Mat, 500> depthBuffer[4];
+circular_buffer<k4a::image, 500> depthBufferBin[4];
 int saveThreadsFinished = 0;
 
 int cameraNum = 0;
@@ -447,24 +449,25 @@ static void *saveDataWrapper(void *data)
 
     char outText[1024] = {0};
     char outDepth[1024] = {0};
+    char outDepthBin[1024] = {0};
 
     // only transmit when signal is recieved
-    // while (1)
+
     while (1)
     {
-        if(args->totalImageFrames == imageIdx && args->totalDepthFrames == depthIdx)
+        if (args->totalImageFrames == imageIdx && args->totalDepthFrames == depthIdx)
         {
             saveThreadsFinished++;
             return NULL;
         }
-        else{
-            std::cout << "frames to save: " << args->totalImageFrames- imageIdx << " ; " << args->totalDepthFrames - depthIdx << std::endl;
-        }
-        
-        // if image or depth frame are available, then save
-        if (!imageBuffer[args->cameraIdx].empty() )
+        else
         {
-            // pthread_cond_wait(&cond1, &lock1);
+            std::cout << "frames to save: " << args->totalImageFrames - imageIdx << " ; " << args->totalDepthFrames - depthIdx << std::endl;
+        }
+
+        // if image or depth frame are available, then save
+        if (!imageBuffer[args->cameraIdx].empty())
+        {
             // with 0 decimation, transmission takes about 0.02s - 50fps
             cv::Mat imgMat = imageBuffer[args->cameraIdx].get().value();
             sprintf(outText, "/home/sc/streamingPipeline/analysisData/ref/frame_%d_camera_%d_color.png", imageIdx, args->cameraIdx);
@@ -484,6 +487,15 @@ static void *saveDataWrapper(void *data)
             cv::Mat depthMat = depthBuffer[args->cameraIdx].get().value();
             sprintf(outDepth, "/home/sc/streamingPipeline/analysisData/ref/frame_%d_camera_%d_depth.png", depthIdx, args->cameraIdx);
             cv::imwrite(outDepth, depthMat);
+            sprintf(outDepthBin, "/home/sc/streamingPipeline/analysisData/ref/frame_%d_camera_%d_depthBin", depthIdx, args->cameraIdx);
+
+            // save depth as an 16bit int stride
+            if (!depthBufferBin[args->cameraIdx].empty())
+            {
+                std::ofstream saveDepthBin(outDepthBin, std::ios::binary);
+                saveDepthBin.write(reinterpret_cast<char *>(depthBufferBin[args->cameraIdx].get().value().get_buffer()), depthBufferBin[args->cameraIdx].get().value().get_size());
+                saveDepthBin.close();
+            }
             depthIdx++;
         }
         else
@@ -560,12 +572,8 @@ void generateMeshAndTransmit(std::vector<t::geometry::Image> *color_img_list, st
         {
             imageBuffer[i].put(multi_cap->capture_devices.at(i)->cv_color_img);
             depthBuffer[i].put(multi_cap->capture_devices.at(i)->cv_depth_img);
-            // save depth as an 16bit int stride 
-            // depthImage
-            std::ofstream input("/home/sc/streamingPipeline/analysisData/temporal-rvl-data/bin");
-            input << multi_cap->capture_devices.at(0)->depthImage.get_buffer();
+            depthBufferBin[i].put(multi_cap->capture_devices.at(i)->depthImage);
         }
-        
 
         // mesh.RemoveVertexAttr("normals");
 
@@ -659,8 +667,8 @@ static void *startCamWrapper(void *data)
 
 int main(int argc, char **argv)
 {
-    pthread_t threads[NUM_THREADS+4];
-    args_t args[NUM_THREADS+4];
+    pthread_t threads[NUM_THREADS + 4];
+    args_t args[NUM_THREADS + 4];
 
     // set parameters for scripting
     if (argc <= 1)
@@ -724,15 +732,16 @@ int main(int argc, char **argv)
     ///////////////////////////
     // create server socket  //
     ///////////////////////////
-    // saving data 
+    // saving data
     transmit_args_t transmit_args[4];
-    for(int i = 0; i < 4; i++){
+    for (int i = 0; i < 4; i++)
+    {
         transmit_args[i].port = PORT;
         transmit_args[i].id = i;
         transmit_args[i].cameraIdx = i;
         transmit_args[i].totalImageFrames = totalImageFrames[0];
         transmit_args[i].totalDepthFrames = totalDepthFrames[0];
-        pthread_create(&threads[2+i], NULL, saveDataWrapper, &transmit_args[i]);
+        pthread_create(&threads[2 + i], NULL, saveDataWrapper, &transmit_args[i]);
     }
 
     //////////////////////////
@@ -755,9 +764,10 @@ int main(int argc, char **argv)
 
     // o3d_app.Run();
 
-    for (unsigned i = 2; i < NUM_THREADS+4; i++)
+    for (unsigned i = 2; i < NUM_THREADS + 4; i++)
     {
-        if(saveThreadsFinished == device_count){
+        if (saveThreadsFinished == device_count)
+        {
             exit(EXIT_SUCCESS);
         }
         pthread_join(threads[i], NULL);

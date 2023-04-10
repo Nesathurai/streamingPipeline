@@ -63,9 +63,9 @@ InputFile create_input_file(std::string folder_path, std::string filename)
         // throw std::exception("The depth pixels are not 16-bit.");
         std::cerr << "The depth pixels are not 16-bit. - " << byte_size << " bytes" << std::endl;
     }
-    return InputFile(filename, std::move(input), width, height);
+    // return InputFile(filename, std::move(input), width, height);
+    return InputFile(filename, std::move(input), 640, 576);
     // return InputFile("/home/sc/streamingPipeline/analysisData/temporal-rvl-data/bin", std::move(input), width, height);
-
 }
 
 // Converts 16-bit buffers into OpenCV Mats.
@@ -179,7 +179,7 @@ int main()
     // auto depth_mat = create_depth_mat(1920, 1080, depth_image.data());
     // cv::imwrite("/home/sc/streamingPipeline/analysisData/temporal-rvl-data/Depth.png", depth_mat);
     
-    InputFile input_file(create_input_file("/home/sc/streamingPipeline/analysisData/temporal-rvl-data/", "comm-camera-movement"));
+    InputFile input_file(create_input_file("/home/sc/streamingPipeline/analysisData/temporal-rvl-data/", "frame_0_camera_0_depthBin"));
     run_trvl(input_file, 10, 2);
 
     return 0;
