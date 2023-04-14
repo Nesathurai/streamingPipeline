@@ -195,17 +195,43 @@ mergeMesh/fast:
 .PHONY : mergeMesh/fast
 
 #=============================================================================
-# Target rules for targets named Example
+# Target rules for targets named mergeBin
 
 # Build rule for target.
-Example: cmake_check_build_system
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 Example
-.PHONY : Example
+mergeBin: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 mergeBin
+.PHONY : mergeBin
 
 # fast build rule for target.
-Example/fast:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/Example.dir/build.make CMakeFiles/Example.dir/build
-.PHONY : Example/fast
+mergeBin/fast:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/mergeBin.dir/build.make CMakeFiles/mergeBin.dir/build
+.PHONY : mergeBin/fast
+
+#=============================================================================
+# Target rules for targets named trvl
+
+# Build rule for target.
+trvl: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 trvl
+.PHONY : trvl
+
+# fast build rule for target.
+trvl/fast:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/trvl.dir/build.make CMakeFiles/trvl.dir/build
+.PHONY : trvl/fast
+
+#=============================================================================
+# Target rules for targets named paper
+
+# Build rule for target.
+paper: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 paper
+.PHONY : paper
+
+# fast build rule for target.
+paper/fast:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/paper.dir/build.make CMakeFiles/paper.dir/build
+.PHONY : paper/fast
 
 src/camera_alignment.o: src/camera_alignment.cpp.o
 .PHONY : src/camera_alignment.o
@@ -217,6 +243,7 @@ src/camera_alignment.cpp.o:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/extractPC.dir/build.make CMakeFiles/extractPC.dir/src/camera_alignment.cpp.o
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/mergePC.dir/build.make CMakeFiles/mergePC.dir/src/camera_alignment.cpp.o
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/mergeMesh.dir/build.make CMakeFiles/mergeMesh.dir/src/camera_alignment.cpp.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/mergeBin.dir/build.make CMakeFiles/mergeBin.dir/src/camera_alignment.cpp.o
 .PHONY : src/camera_alignment.cpp.o
 
 src/camera_alignment.i: src/camera_alignment.cpp.i
@@ -229,6 +256,7 @@ src/camera_alignment.cpp.i:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/extractPC.dir/build.make CMakeFiles/extractPC.dir/src/camera_alignment.cpp.i
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/mergePC.dir/build.make CMakeFiles/mergePC.dir/src/camera_alignment.cpp.i
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/mergeMesh.dir/build.make CMakeFiles/mergeMesh.dir/src/camera_alignment.cpp.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/mergeBin.dir/build.make CMakeFiles/mergeBin.dir/src/camera_alignment.cpp.i
 .PHONY : src/camera_alignment.cpp.i
 
 src/camera_alignment.s: src/camera_alignment.cpp.s
@@ -241,6 +269,7 @@ src/camera_alignment.cpp.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/extractPC.dir/build.make CMakeFiles/extractPC.dir/src/camera_alignment.cpp.s
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/mergePC.dir/build.make CMakeFiles/mergePC.dir/src/camera_alignment.cpp.s
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/mergeMesh.dir/build.make CMakeFiles/mergeMesh.dir/src/camera_alignment.cpp.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/mergeBin.dir/build.make CMakeFiles/mergeBin.dir/src/camera_alignment.cpp.s
 .PHONY : src/camera_alignment.cpp.s
 
 src/client.o: src/client.cpp.o
@@ -266,30 +295,6 @@ src/client.s: src/client.cpp.s
 src/client.cpp.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/client.dir/build.make CMakeFiles/client.dir/src/client.cpp.s
 .PHONY : src/client.cpp.s
-
-src/example.o: src/example.cpp.o
-.PHONY : src/example.o
-
-# target to build an object file
-src/example.cpp.o:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/Example.dir/build.make CMakeFiles/Example.dir/src/example.cpp.o
-.PHONY : src/example.cpp.o
-
-src/example.i: src/example.cpp.i
-.PHONY : src/example.i
-
-# target to preprocess a source file
-src/example.cpp.i:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/Example.dir/build.make CMakeFiles/Example.dir/src/example.cpp.i
-.PHONY : src/example.cpp.i
-
-src/example.s: src/example.cpp.s
-.PHONY : src/example.s
-
-# target to generate assembly for a file
-src/example.cpp.s:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/Example.dir/build.make CMakeFiles/Example.dir/src/example.cpp.s
-.PHONY : src/example.cpp.s
 
 src/extractMesh.o: src/extractMesh.cpp.o
 .PHONY : src/extractMesh.o
@@ -349,6 +354,7 @@ src/kinect_capture.cpp.o:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/extractPC.dir/build.make CMakeFiles/extractPC.dir/src/kinect_capture.cpp.o
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/mergePC.dir/build.make CMakeFiles/mergePC.dir/src/kinect_capture.cpp.o
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/mergeMesh.dir/build.make CMakeFiles/mergeMesh.dir/src/kinect_capture.cpp.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/mergeBin.dir/build.make CMakeFiles/mergeBin.dir/src/kinect_capture.cpp.o
 .PHONY : src/kinect_capture.cpp.o
 
 src/kinect_capture.i: src/kinect_capture.cpp.i
@@ -361,6 +367,7 @@ src/kinect_capture.cpp.i:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/extractPC.dir/build.make CMakeFiles/extractPC.dir/src/kinect_capture.cpp.i
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/mergePC.dir/build.make CMakeFiles/mergePC.dir/src/kinect_capture.cpp.i
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/mergeMesh.dir/build.make CMakeFiles/mergeMesh.dir/src/kinect_capture.cpp.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/mergeBin.dir/build.make CMakeFiles/mergeBin.dir/src/kinect_capture.cpp.i
 .PHONY : src/kinect_capture.cpp.i
 
 src/kinect_capture.s: src/kinect_capture.cpp.s
@@ -373,7 +380,32 @@ src/kinect_capture.cpp.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/extractPC.dir/build.make CMakeFiles/extractPC.dir/src/kinect_capture.cpp.s
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/mergePC.dir/build.make CMakeFiles/mergePC.dir/src/kinect_capture.cpp.s
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/mergeMesh.dir/build.make CMakeFiles/mergeMesh.dir/src/kinect_capture.cpp.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/mergeBin.dir/build.make CMakeFiles/mergeBin.dir/src/kinect_capture.cpp.s
 .PHONY : src/kinect_capture.cpp.s
+
+src/mergeBin.o: src/mergeBin.cpp.o
+.PHONY : src/mergeBin.o
+
+# target to build an object file
+src/mergeBin.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/mergeBin.dir/build.make CMakeFiles/mergeBin.dir/src/mergeBin.cpp.o
+.PHONY : src/mergeBin.cpp.o
+
+src/mergeBin.i: src/mergeBin.cpp.i
+.PHONY : src/mergeBin.i
+
+# target to preprocess a source file
+src/mergeBin.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/mergeBin.dir/build.make CMakeFiles/mergeBin.dir/src/mergeBin.cpp.i
+.PHONY : src/mergeBin.cpp.i
+
+src/mergeBin.s: src/mergeBin.cpp.s
+.PHONY : src/mergeBin.s
+
+# target to generate assembly for a file
+src/mergeBin.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/mergeBin.dir/build.make CMakeFiles/mergeBin.dir/src/mergeBin.cpp.s
+.PHONY : src/mergeBin.cpp.s
 
 src/mergeMesh.o: src/mergeMesh.cpp.o
 .PHONY : src/mergeMesh.o
@@ -433,6 +465,7 @@ src/multi_kinect_capture.cpp.o:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/extractPC.dir/build.make CMakeFiles/extractPC.dir/src/multi_kinect_capture.cpp.o
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/mergePC.dir/build.make CMakeFiles/mergePC.dir/src/multi_kinect_capture.cpp.o
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/mergeMesh.dir/build.make CMakeFiles/mergeMesh.dir/src/multi_kinect_capture.cpp.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/mergeBin.dir/build.make CMakeFiles/mergeBin.dir/src/multi_kinect_capture.cpp.o
 .PHONY : src/multi_kinect_capture.cpp.o
 
 src/multi_kinect_capture.i: src/multi_kinect_capture.cpp.i
@@ -445,6 +478,7 @@ src/multi_kinect_capture.cpp.i:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/extractPC.dir/build.make CMakeFiles/extractPC.dir/src/multi_kinect_capture.cpp.i
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/mergePC.dir/build.make CMakeFiles/mergePC.dir/src/multi_kinect_capture.cpp.i
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/mergeMesh.dir/build.make CMakeFiles/mergeMesh.dir/src/multi_kinect_capture.cpp.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/mergeBin.dir/build.make CMakeFiles/mergeBin.dir/src/multi_kinect_capture.cpp.i
 .PHONY : src/multi_kinect_capture.cpp.i
 
 src/multi_kinect_capture.s: src/multi_kinect_capture.cpp.s
@@ -457,7 +491,32 @@ src/multi_kinect_capture.cpp.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/extractPC.dir/build.make CMakeFiles/extractPC.dir/src/multi_kinect_capture.cpp.s
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/mergePC.dir/build.make CMakeFiles/mergePC.dir/src/multi_kinect_capture.cpp.s
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/mergeMesh.dir/build.make CMakeFiles/mergeMesh.dir/src/multi_kinect_capture.cpp.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/mergeBin.dir/build.make CMakeFiles/mergeBin.dir/src/multi_kinect_capture.cpp.s
 .PHONY : src/multi_kinect_capture.cpp.s
+
+src/paper.o: src/paper.cpp.o
+.PHONY : src/paper.o
+
+# target to build an object file
+src/paper.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/paper.dir/build.make CMakeFiles/paper.dir/src/paper.cpp.o
+.PHONY : src/paper.cpp.o
+
+src/paper.i: src/paper.cpp.i
+.PHONY : src/paper.i
+
+# target to preprocess a source file
+src/paper.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/paper.dir/build.make CMakeFiles/paper.dir/src/paper.cpp.i
+.PHONY : src/paper.cpp.i
+
+src/paper.s: src/paper.cpp.s
+.PHONY : src/paper.s
+
+# target to generate assembly for a file
+src/paper.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/paper.dir/build.make CMakeFiles/paper.dir/src/paper.cpp.s
+.PHONY : src/paper.cpp.s
 
 src/reconstruction.o: src/reconstruction.cpp.o
 .PHONY : src/reconstruction.o
@@ -493,6 +552,7 @@ src/texture_mapping.cpp.o:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/extractPC.dir/build.make CMakeFiles/extractPC.dir/src/texture_mapping.cpp.o
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/mergePC.dir/build.make CMakeFiles/mergePC.dir/src/texture_mapping.cpp.o
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/mergeMesh.dir/build.make CMakeFiles/mergeMesh.dir/src/texture_mapping.cpp.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/mergeBin.dir/build.make CMakeFiles/mergeBin.dir/src/texture_mapping.cpp.o
 .PHONY : src/texture_mapping.cpp.o
 
 src/texture_mapping.i: src/texture_mapping.cpp.i
@@ -505,6 +565,7 @@ src/texture_mapping.cpp.i:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/extractPC.dir/build.make CMakeFiles/extractPC.dir/src/texture_mapping.cpp.i
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/mergePC.dir/build.make CMakeFiles/mergePC.dir/src/texture_mapping.cpp.i
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/mergeMesh.dir/build.make CMakeFiles/mergeMesh.dir/src/texture_mapping.cpp.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/mergeBin.dir/build.make CMakeFiles/mergeBin.dir/src/texture_mapping.cpp.i
 .PHONY : src/texture_mapping.cpp.i
 
 src/texture_mapping.s: src/texture_mapping.cpp.s
@@ -517,7 +578,32 @@ src/texture_mapping.cpp.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/extractPC.dir/build.make CMakeFiles/extractPC.dir/src/texture_mapping.cpp.s
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/mergePC.dir/build.make CMakeFiles/mergePC.dir/src/texture_mapping.cpp.s
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/mergeMesh.dir/build.make CMakeFiles/mergeMesh.dir/src/texture_mapping.cpp.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/mergeBin.dir/build.make CMakeFiles/mergeBin.dir/src/texture_mapping.cpp.s
 .PHONY : src/texture_mapping.cpp.s
+
+src/trvl.o: src/trvl.cpp.o
+.PHONY : src/trvl.o
+
+# target to build an object file
+src/trvl.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/trvl.dir/build.make CMakeFiles/trvl.dir/src/trvl.cpp.o
+.PHONY : src/trvl.cpp.o
+
+src/trvl.i: src/trvl.cpp.i
+.PHONY : src/trvl.i
+
+# target to preprocess a source file
+src/trvl.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/trvl.dir/build.make CMakeFiles/trvl.dir/src/trvl.cpp.i
+.PHONY : src/trvl.cpp.i
+
+src/trvl.s: src/trvl.cpp.s
+.PHONY : src/trvl.s
+
+# target to generate assembly for a file
+src/trvl.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/trvl.dir/build.make CMakeFiles/trvl.dir/src/trvl.cpp.s
+.PHONY : src/trvl.cpp.s
 
 src/util.o: src/util.cpp.o
 .PHONY : src/util.o
@@ -529,6 +615,7 @@ src/util.cpp.o:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/extractPC.dir/build.make CMakeFiles/extractPC.dir/src/util.cpp.o
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/mergePC.dir/build.make CMakeFiles/mergePC.dir/src/util.cpp.o
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/mergeMesh.dir/build.make CMakeFiles/mergeMesh.dir/src/util.cpp.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/mergeBin.dir/build.make CMakeFiles/mergeBin.dir/src/util.cpp.o
 .PHONY : src/util.cpp.o
 
 src/util.i: src/util.cpp.i
@@ -541,6 +628,7 @@ src/util.cpp.i:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/extractPC.dir/build.make CMakeFiles/extractPC.dir/src/util.cpp.i
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/mergePC.dir/build.make CMakeFiles/mergePC.dir/src/util.cpp.i
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/mergeMesh.dir/build.make CMakeFiles/mergeMesh.dir/src/util.cpp.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/mergeBin.dir/build.make CMakeFiles/mergeBin.dir/src/util.cpp.i
 .PHONY : src/util.cpp.i
 
 src/util.s: src/util.cpp.s
@@ -553,6 +641,7 @@ src/util.cpp.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/extractPC.dir/build.make CMakeFiles/extractPC.dir/src/util.cpp.s
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/mergePC.dir/build.make CMakeFiles/mergePC.dir/src/util.cpp.s
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/mergeMesh.dir/build.make CMakeFiles/mergeMesh.dir/src/util.cpp.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/mergeBin.dir/build.make CMakeFiles/mergeBin.dir/src/util.cpp.s
 .PHONY : src/util.cpp.s
 
 # Help Target
@@ -563,22 +652,21 @@ help:
 	@echo "... depend"
 	@echo "... edit_cache"
 	@echo "... rebuild_cache"
-	@echo "... Example"
 	@echo "... client"
 	@echo "... extractMesh"
 	@echo "... extractPC"
+	@echo "... mergeBin"
 	@echo "... mergeMesh"
 	@echo "... mergePC"
+	@echo "... paper"
 	@echo "... reconstruction"
+	@echo "... trvl"
 	@echo "... src/camera_alignment.o"
 	@echo "... src/camera_alignment.i"
 	@echo "... src/camera_alignment.s"
 	@echo "... src/client.o"
 	@echo "... src/client.i"
 	@echo "... src/client.s"
-	@echo "... src/example.o"
-	@echo "... src/example.i"
-	@echo "... src/example.s"
 	@echo "... src/extractMesh.o"
 	@echo "... src/extractMesh.i"
 	@echo "... src/extractMesh.s"
@@ -588,6 +676,9 @@ help:
 	@echo "... src/kinect_capture.o"
 	@echo "... src/kinect_capture.i"
 	@echo "... src/kinect_capture.s"
+	@echo "... src/mergeBin.o"
+	@echo "... src/mergeBin.i"
+	@echo "... src/mergeBin.s"
 	@echo "... src/mergeMesh.o"
 	@echo "... src/mergeMesh.i"
 	@echo "... src/mergeMesh.s"
@@ -597,12 +688,18 @@ help:
 	@echo "... src/multi_kinect_capture.o"
 	@echo "... src/multi_kinect_capture.i"
 	@echo "... src/multi_kinect_capture.s"
+	@echo "... src/paper.o"
+	@echo "... src/paper.i"
+	@echo "... src/paper.s"
 	@echo "... src/reconstruction.o"
 	@echo "... src/reconstruction.i"
 	@echo "... src/reconstruction.s"
 	@echo "... src/texture_mapping.o"
 	@echo "... src/texture_mapping.i"
 	@echo "... src/texture_mapping.s"
+	@echo "... src/trvl.o"
+	@echo "... src/trvl.i"
+	@echo "... src/trvl.s"
 	@echo "... src/util.o"
 	@echo "... src/util.i"
 	@echo "... src/util.s"

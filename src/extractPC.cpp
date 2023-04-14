@@ -107,10 +107,10 @@ int main(int argc, char **argv)
         // string processing to get the name of the file minus .png suffix
         nameStr = textStr.substr(textStr.rfind('/')+1, textStr.size());
         nameStr = nameStr.substr(0, nameStr.rfind('_'));
-        std::cout << calibStr << std::endl;
-        std::cout << textStr << std::endl;
-        std::cout << depthStr << std::endl;
-        std::cout << nameStr << std::endl;
+        // std::cout << calibStr << std::endl;
+        // std::cout << textStr << std::endl;
+        // std::cout << depthStr << std::endl;
+        // std::cout << nameStr << std::endl;
     }
     else
     {
@@ -195,7 +195,7 @@ int main(int argc, char **argv)
     t::geometry::PointCloud cloud_tf = cloud_t.Transform(extrinsic_tf.Inverse());
 
     char outPC[1024] = {0};
-    sprintf(outPC, "/home/sc/streamingPipeline/analysisData/%s.ply", nameStr.c_str());
+    sprintf(outPC, "/home/sc/streamingPipeline/analysisData/meshPCs/%s.ply", nameStr.c_str());
     open3d::t::io::WritePointCloud(outPC, cloud_tf);
 
     return 1;

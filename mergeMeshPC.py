@@ -5,7 +5,7 @@ import os
 # voxelSizes = [0.01, 0.02, 0.1]
 cameras = 4
 rootPath = '/home/sc/streamingPipeline'
-filePath = '../analysisData'
+filePath = '../analysisData/meshPCs'
 
 os.system('clear && cd {:}/build && make'.format(rootPath))
 

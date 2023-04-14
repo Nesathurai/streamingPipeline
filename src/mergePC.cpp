@@ -126,7 +126,7 @@ int main(int argc, char **argv)
     // TODO: remove similar points?
     out0.RemoveDuplicatedPoints();
     char outPC[1024] = {0};
-    sprintf(outPC, "/home/sc/streamingPipeline/analysisData/%s.ply", nameStr.c_str());
+    sprintf(outPC, "/home/sc/streamingPipeline/analysisData/meshPCs/%s.ply", nameStr.c_str());
     open3d::t::io::WritePointCloud(outPC, out0);
 
     return 1;

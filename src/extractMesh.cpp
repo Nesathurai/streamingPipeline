@@ -108,11 +108,11 @@ int main(int argc, char **argv)
         // string processing to get the name of the file minus .png suffix
         nameStr = textStr.substr(textStr.rfind('/')+1, textStr.size());
         nameStr = nameStr.substr(0, nameStr.rfind('_'));
-        std::cout << calibStr << std::endl;
-        std::cout << textStr << std::endl;
-        std::cout << depthStr << std::endl;
-        std::cout << voxel_size << std::endl;
-        std::cout << nameStr << std::endl;
+        // std::cout << calibStr << std::endl;
+        // std::cout << textStr << std::endl;
+        // std::cout << depthStr << std::endl;
+        // std::cout << voxel_size << std::endl;
+        // std::cout << nameStr << std::endl;
     }
     else
     {
@@ -200,7 +200,7 @@ int main(int argc, char **argv)
     char outMesh[1024] = {0};
 
     // char outPointCloud[1024] = {0};
-    sprintf(outMesh, "/home/sc/streamingPipeline/analysisData/%s_vx_%.5f.obj", nameStr.c_str(), voxel_size);
+    sprintf(outMesh, "/home/sc/streamingPipeline/analysisData/meshPCs/%s_vx_%.5f.obj", nameStr.c_str(), voxel_size);
     // sprintf(outPointCloud, "/home/sc/streamingPipeline/analysisData/vx_%.05f/vx_%f_frame_%d_ptc.obj", voxel_size, voxel_size, counter);
 
     open3d::t::io::WriteTriangleMesh(outMesh, mesh, false, false, true, true, true, true);

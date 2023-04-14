@@ -67,6 +67,17 @@ add_executable(mergeMesh
 )
 
 
+add_executable(mergeBin
+    src/mergeBin.cpp
+    src/kinect_capture.cpp
+    src/camera_alignment.cpp
+    src/multi_kinect_capture.cpp
+    src/util.cpp
+    src/texture_mapping.cpp
+    include/cv_convert_util.hpp
+)
+
+
 target_link_libraries(reconstruction -Wl,--whole-archive draco -Wl,--no-whole-archive
                         Open3D::Open3D
                         apriltag::apriltag
@@ -102,6 +113,14 @@ target_link_libraries(mergeMesh -Wl,--whole-archive draco -Wl,--no-whole-archive
                         k4a::k4a
                         ${OpenCV_LIBS})
 
+
+target_link_libraries(mergeBin -Wl,--whole-archive draco -Wl,--no-whole-archive
+                        Open3D::Open3D
+                        apriltag::apriltag
+                        k4a::k4a
+                        ${OpenCV_LIBS})
+
+
 target_compile_options(client PUBLIC
   "-O3"
   )
@@ -122,16 +141,33 @@ target_compile_options(reconstruction PUBLIC
   "-ggdb"
   "-O3"
   )
+target_compile_options(mergeBin PUBLIC
+  "-ggdb"
+  "-O3"
+  )
 
   
-add_executable(Example
+add_executable(trvl
   include/rvl.h
   include/trvl.h
-  src/example.cpp
+  src/trvl.cpp
 )
-target_link_libraries(Example
+target_link_libraries(trvl
   ${OpenCV_LIBS}
 )
-set_target_properties(Example PROPERTIES
-  CXX_STANDARD 17
+#set_target_properties(trvl PROPERTIES
+#  CXX_STANDARD 14
+#)
+
+
+add_executable(paper
+  include/rvl.h
+  include/trvl.h
+  src/paper.cpp
 )
+target_link_libraries(paper
+  ${OpenCV_LIBS}
+)
+#set_target_properties(paper PROPERTIES
+#  CXX_STANDARD 14
+#)

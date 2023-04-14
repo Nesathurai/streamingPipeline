@@ -9,3 +9,5 @@ ffmpeg -r 30 -f image2 -s 1920x1080 -pattern_type glob -i "frame_*.jpg" -vcodec 
 ./mergePC ../analysisData/frame_0_camera_0.ply ../analysisData/frame_0_camera_1.ply ../analysisData/frame_0_camera_2.ply ../analysisData/frame_0_camera_3.ply
 
 ./mergeMesh ../analysisData/frame_0_camera_0.obj ../analysisData/frame_0_camera_1.obj ../analysisData/frame_0_camera_2.obj ../analysisData/frame_0_camera_3.obj
+
+./trvl /home/sc/streamingPipeline/analysisData/ref/ frame_0_depthBin 10 2 1 1

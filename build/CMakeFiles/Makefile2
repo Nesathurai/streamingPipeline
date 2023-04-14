@@ -69,7 +69,9 @@ all: CMakeFiles/extractMesh.dir/all
 all: CMakeFiles/extractPC.dir/all
 all: CMakeFiles/mergePC.dir/all
 all: CMakeFiles/mergeMesh.dir/all
-all: CMakeFiles/Example.dir/all
+all: CMakeFiles/mergeBin.dir/all
+all: CMakeFiles/trvl.dir/all
+all: CMakeFiles/paper.dir/all
 .PHONY : all
 
 # The main recursive "preinstall" target.
@@ -83,7 +85,9 @@ clean: CMakeFiles/extractMesh.dir/clean
 clean: CMakeFiles/extractPC.dir/clean
 clean: CMakeFiles/mergePC.dir/clean
 clean: CMakeFiles/mergeMesh.dir/clean
-clean: CMakeFiles/Example.dir/clean
+clean: CMakeFiles/mergeBin.dir/clean
+clean: CMakeFiles/trvl.dir/clean
+clean: CMakeFiles/paper.dir/clean
 .PHONY : clean
 
 #=============================================================================
@@ -93,7 +97,7 @@ clean: CMakeFiles/Example.dir/clean
 CMakeFiles/reconstruction.dir/all:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/reconstruction.dir/build.make CMakeFiles/reconstruction.dir/depend
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/reconstruction.dir/build.make CMakeFiles/reconstruction.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/home/sc/streamingPipeline/build/CMakeFiles --progress-num=33,34,35,36,37,38,39 "Built target reconstruction"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/home/sc/streamingPipeline/build/CMakeFiles --progress-num=40,41,42,43,44,45,46 "Built target reconstruction"
 .PHONY : CMakeFiles/reconstruction.dir/all
 
 # Build rule for subdir invocation for target.
@@ -119,7 +123,7 @@ CMakeFiles/reconstruction.dir/clean:
 CMakeFiles/client.dir/all:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/client.dir/build.make CMakeFiles/client.dir/depend
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/client.dir/build.make CMakeFiles/client.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/home/sc/streamingPipeline/build/CMakeFiles --progress-num=3,4 "Built target client"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/home/sc/streamingPipeline/build/CMakeFiles --progress-num=1,2 "Built target client"
 .PHONY : CMakeFiles/client.dir/all
 
 # Build rule for subdir invocation for target.
@@ -145,7 +149,7 @@ CMakeFiles/client.dir/clean:
 CMakeFiles/extractMesh.dir/all:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/extractMesh.dir/build.make CMakeFiles/extractMesh.dir/depend
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/extractMesh.dir/build.make CMakeFiles/extractMesh.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/home/sc/streamingPipeline/build/CMakeFiles --progress-num=5,6,7,8,9,10,11 "Built target extractMesh"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/home/sc/streamingPipeline/build/CMakeFiles --progress-num=3,4,5,6,7,8,9 "Built target extractMesh"
 .PHONY : CMakeFiles/extractMesh.dir/all
 
 # Build rule for subdir invocation for target.
@@ -171,7 +175,7 @@ CMakeFiles/extractMesh.dir/clean:
 CMakeFiles/extractPC.dir/all:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/extractPC.dir/build.make CMakeFiles/extractPC.dir/depend
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/extractPC.dir/build.make CMakeFiles/extractPC.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/home/sc/streamingPipeline/build/CMakeFiles --progress-num=12,13,14,15,16,17,18 "Built target extractPC"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/home/sc/streamingPipeline/build/CMakeFiles --progress-num=10,11,12,13,14,15,16 "Built target extractPC"
 .PHONY : CMakeFiles/extractPC.dir/all
 
 # Build rule for subdir invocation for target.
@@ -197,7 +201,7 @@ CMakeFiles/extractPC.dir/clean:
 CMakeFiles/mergePC.dir/all:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/mergePC.dir/build.make CMakeFiles/mergePC.dir/depend
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/mergePC.dir/build.make CMakeFiles/mergePC.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/home/sc/streamingPipeline/build/CMakeFiles --progress-num=26,27,28,29,30,31,32 "Built target mergePC"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/home/sc/streamingPipeline/build/CMakeFiles --progress-num=31,32,33,34,35,36,37 "Built target mergePC"
 .PHONY : CMakeFiles/mergePC.dir/all
 
 # Build rule for subdir invocation for target.
@@ -223,7 +227,7 @@ CMakeFiles/mergePC.dir/clean:
 CMakeFiles/mergeMesh.dir/all:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/mergeMesh.dir/build.make CMakeFiles/mergeMesh.dir/depend
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/mergeMesh.dir/build.make CMakeFiles/mergeMesh.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/home/sc/streamingPipeline/build/CMakeFiles --progress-num=19,20,21,22,23,24,25 "Built target mergeMesh"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/home/sc/streamingPipeline/build/CMakeFiles --progress-num=24,25,26,27,28,29,30 "Built target mergeMesh"
 .PHONY : CMakeFiles/mergeMesh.dir/all
 
 # Build rule for subdir invocation for target.
@@ -243,30 +247,82 @@ CMakeFiles/mergeMesh.dir/clean:
 .PHONY : CMakeFiles/mergeMesh.dir/clean
 
 #=============================================================================
-# Target rules for target CMakeFiles/Example.dir
+# Target rules for target CMakeFiles/mergeBin.dir
 
 # All Build rule for target.
-CMakeFiles/Example.dir/all:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/Example.dir/build.make CMakeFiles/Example.dir/depend
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/Example.dir/build.make CMakeFiles/Example.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/home/sc/streamingPipeline/build/CMakeFiles --progress-num=1,2 "Built target Example"
-.PHONY : CMakeFiles/Example.dir/all
+CMakeFiles/mergeBin.dir/all:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/mergeBin.dir/build.make CMakeFiles/mergeBin.dir/depend
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/mergeBin.dir/build.make CMakeFiles/mergeBin.dir/build
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/home/sc/streamingPipeline/build/CMakeFiles --progress-num=17,18,19,20,21,22,23 "Built target mergeBin"
+.PHONY : CMakeFiles/mergeBin.dir/all
 
 # Build rule for subdir invocation for target.
-CMakeFiles/Example.dir/rule: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/sc/streamingPipeline/build/CMakeFiles 2
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 CMakeFiles/Example.dir/all
+CMakeFiles/mergeBin.dir/rule: cmake_check_build_system
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/sc/streamingPipeline/build/CMakeFiles 7
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 CMakeFiles/mergeBin.dir/all
 	$(CMAKE_COMMAND) -E cmake_progress_start /home/sc/streamingPipeline/build/CMakeFiles 0
-.PHONY : CMakeFiles/Example.dir/rule
+.PHONY : CMakeFiles/mergeBin.dir/rule
 
 # Convenience name for target.
-Example: CMakeFiles/Example.dir/rule
-.PHONY : Example
+mergeBin: CMakeFiles/mergeBin.dir/rule
+.PHONY : mergeBin
 
 # clean rule for target.
-CMakeFiles/Example.dir/clean:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/Example.dir/build.make CMakeFiles/Example.dir/clean
-.PHONY : CMakeFiles/Example.dir/clean
+CMakeFiles/mergeBin.dir/clean:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/mergeBin.dir/build.make CMakeFiles/mergeBin.dir/clean
+.PHONY : CMakeFiles/mergeBin.dir/clean
+
+#=============================================================================
+# Target rules for target CMakeFiles/trvl.dir
+
+# All Build rule for target.
+CMakeFiles/trvl.dir/all:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/trvl.dir/build.make CMakeFiles/trvl.dir/depend
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/trvl.dir/build.make CMakeFiles/trvl.dir/build
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/home/sc/streamingPipeline/build/CMakeFiles --progress-num=47,48 "Built target trvl"
+.PHONY : CMakeFiles/trvl.dir/all
+
+# Build rule for subdir invocation for target.
+CMakeFiles/trvl.dir/rule: cmake_check_build_system
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/sc/streamingPipeline/build/CMakeFiles 2
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 CMakeFiles/trvl.dir/all
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/sc/streamingPipeline/build/CMakeFiles 0
+.PHONY : CMakeFiles/trvl.dir/rule
+
+# Convenience name for target.
+trvl: CMakeFiles/trvl.dir/rule
+.PHONY : trvl
+
+# clean rule for target.
+CMakeFiles/trvl.dir/clean:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/trvl.dir/build.make CMakeFiles/trvl.dir/clean
+.PHONY : CMakeFiles/trvl.dir/clean
+
+#=============================================================================
+# Target rules for target CMakeFiles/paper.dir
+
+# All Build rule for target.
+CMakeFiles/paper.dir/all:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/paper.dir/build.make CMakeFiles/paper.dir/depend
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/paper.dir/build.make CMakeFiles/paper.dir/build
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/home/sc/streamingPipeline/build/CMakeFiles --progress-num=38,39 "Built target paper"
+.PHONY : CMakeFiles/paper.dir/all
+
+# Build rule for subdir invocation for target.
+CMakeFiles/paper.dir/rule: cmake_check_build_system
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/sc/streamingPipeline/build/CMakeFiles 2
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 CMakeFiles/paper.dir/all
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/sc/streamingPipeline/build/CMakeFiles 0
+.PHONY : CMakeFiles/paper.dir/rule
+
+# Convenience name for target.
+paper: CMakeFiles/paper.dir/rule
+.PHONY : paper
+
+# clean rule for target.
+CMakeFiles/paper.dir/clean:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/paper.dir/build.make CMakeFiles/paper.dir/clean
+.PHONY : CMakeFiles/paper.dir/clean
 
 #=============================================================================
 # Special targets to cleanup operation of make.

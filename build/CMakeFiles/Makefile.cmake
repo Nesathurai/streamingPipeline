@@ -77,5 +77,7 @@ set(CMAKE_DEPEND_INFO_FILES
   "CMakeFiles/extractPC.dir/DependInfo.cmake"
   "CMakeFiles/mergePC.dir/DependInfo.cmake"
   "CMakeFiles/mergeMesh.dir/DependInfo.cmake"
-  "CMakeFiles/Example.dir/DependInfo.cmake"
+  "CMakeFiles/mergeBin.dir/DependInfo.cmake"
+  "CMakeFiles/trvl.dir/DependInfo.cmake"
+  "CMakeFiles/paper.dir/DependInfo.cmake"
   )

@@ -10,8 +10,11 @@ print(bitRates)
 myfile.close()
 
 rootPath = '/home/sc/streamingPipeline'
+os.system('''export DISPLAY=":0.0"''')
 os.system('cd {:} && python3 captureFrames.py'.format(rootPath))
 os.system('cd {:} && python3 framesToVideoSSIM.py'.format(rootPath))
 os.system('cd {:} && python3 extractMeshPC.py'.format(rootPath))
 os.system('cd {:} && python3 mergeMeshPC.py'.format(rootPath))
+os.system('cd {:} && python3 mergeBin.py'.format(rootPath))
 os.system('cd {:} && python3 compressMeshPC.py'.format(rootPath))
+os.system('cd {:} && python3 trvl.py'.format(rootPath))

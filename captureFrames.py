@@ -1,15 +1,10 @@
 import numpy as np
 import os
 
-
 myfile = open("settings.txt", "r")
 framesPerSetting = myfile.readline().split("=")[-1].strip()
-print(framesPerSetting)
+# print(framesPerSetting)
 myfile.close()
-
-
-# framesPerSetting = 10
-# bitRates = ["1M", "2M", "5M", "10M", "100M"]
 
 rootPath = '/home/sc/streamingPipeline'
 

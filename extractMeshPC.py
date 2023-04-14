@@ -6,17 +6,12 @@ rootPath = '/home/sc/streamingPipeline'
 filePath = '../analysisData/ref'
 os.system('clear && cd {:}/build && make'.format(rootPath))
 
-
 myfile = open("settings.txt", "r")
 framesPerSetting = int(myfile.readline().split("=")[-1].strip())
-print(framesPerSetting)
+# print(framesPerSetting)
 voxelSizes = myfile.readline().split("=")[-1].replace("[","").replace("]","").replace(",","").replace("\n","").split(" ")[1:]
-print(voxelSizes)
+# print(voxelSizes)
 myfile.close()
-
-
-# framesPerSetting = 10 
-# voxelSizes = [0.01, 0.02, 0.1]
 
 for voxelSize in voxelSizes:
     for camera in range(cameras):

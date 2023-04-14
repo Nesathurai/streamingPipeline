@@ -129,7 +129,7 @@ int main(int argc, char **argv)
     out0 += out3;
 
     char outMesh[1024] = {0};
-    sprintf(outMesh, "/home/sc/streamingPipeline/analysisData/%s_vx_%s.obj", nameStr.c_str(), vx.c_str());
+    sprintf(outMesh, "/home/sc/streamingPipeline/analysisData/meshPCs/%s_vx_%s.obj", nameStr.c_str(), vx.c_str());
     std::cout << outMesh << std::endl;
     open3d::io::WriteTriangleMesh(outMesh, out0);
 

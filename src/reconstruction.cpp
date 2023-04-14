@@ -158,15 +158,12 @@ circular_buffer<cv::Mat, 500> imageBuffer[4];
 circular_buffer<cv::Mat, 500> depthBuffer[4];
 circular_buffer<k4a::image, 500> depthBufferBin[4];
 int saveThreadsFinished = 0;
+int depthWidth = 640;
+int depthHeight = 576;
 
 int cameraNum = 0;
 
 open3d::geometry::TriangleMesh transmitMesh;
-
-// Declaration of thread condition variable
-pthread_cond_t cond1 = PTHREAD_COND_INITIALIZER;
-// declaring mutex
-pthread_mutex_t lock1 = PTHREAD_MUTEX_INITIALIZER;
 
 int open3d_to_draco(open3d::geometry::TriangleMesh *inOpen3d, draco::EncoderBuffer *outDracoBuffer)
 {
@@ -415,7 +412,6 @@ static void *transmitDataWrapper(void *data)
     {
         if (!meshes.empty())
         {
-            // pthread_cond_wait(&cond1, &lock1);
             // with 0 decimation, transmission takes about 0.02s - 50fps
             geometry::TriangleMesh legacyMesh = meshes.get().value();
             if (&legacyMesh != NULL)
@@ -452,7 +448,6 @@ static void *saveDataWrapper(void *data)
     char outDepthBin[1024] = {0};
 
     // only transmit when signal is recieved
-
     while (1)
     {
         if (args->totalImageFrames == imageIdx && args->totalDepthFrames == depthIdx)
@@ -487,13 +482,14 @@ static void *saveDataWrapper(void *data)
             cv::Mat depthMat = depthBuffer[args->cameraIdx].get().value();
             sprintf(outDepth, "/home/sc/streamingPipeline/analysisData/ref/frame_%d_camera_%d_depth.png", depthIdx, args->cameraIdx);
             cv::imwrite(outDepth, depthMat);
-            sprintf(outDepthBin, "/home/sc/streamingPipeline/analysisData/ref/frame_%d_camera_%d_depthBin", depthIdx, args->cameraIdx);
 
             // save depth as an 16bit int stride
             if (!depthBufferBin[args->cameraIdx].empty())
             {
+                sprintf(outDepthBin, "/home/sc/streamingPipeline/analysisData/ref/frame_%d_camera_%d_depthBin", depthIdx, args->cameraIdx);
+                k4a::image depthBin = depthBufferBin[args->cameraIdx].get().value();
                 std::ofstream saveDepthBin(outDepthBin, std::ios::binary);
-                saveDepthBin.write(reinterpret_cast<char *>(depthBufferBin[args->cameraIdx].get().value().get_buffer()), depthBufferBin[args->cameraIdx].get().value().get_size());
+                saveDepthBin.write(reinterpret_cast<char *>(depthBin.get_buffer()), depthBin.get_size());
                 saveDepthBin.close();
             }
             depthIdx++;
@@ -503,9 +499,7 @@ static void *saveDataWrapper(void *data)
             std::this_thread::sleep_for(std::chrono::milliseconds(5));
         }
         //  may run into some asynchronous problems with the depth and image frames being saved out of order
-        // TODO -
     }
-    // exit(EXIT_SUCCESS);
     return NULL;
 }
 
@@ -522,6 +516,9 @@ void generateMeshAndTransmit(std::vector<t::geometry::Image> *color_img_list, st
     duration<double, std::milli> fpsDel;
     int fpsCounter = 0;
     int counter = 0;
+    int depthBinAllIdx = 0;
+    char outDepthBinAll[1024] = {0};
+
     delta("frame capture period");
     while (1 && ((totalFrames[0] > 0) || (totalFrames[0] == -1)))
     {
@@ -568,12 +565,26 @@ void generateMeshAndTransmit(std::vector<t::geometry::Image> *color_img_list, st
         // cv::imwrite(outText, multi_cap->capture_devices.at(0)->cv_color_img);
         // cv::imwrite(outDepth, multi_cap->capture_devices.at(0)->cv_depth_img);
 
+        // size_t buffer_size = device_count * depthWidth * depthHeight;
+        // uint8_t *allFramesBinBuffer;
+        // allFramesBinBuffer = (uint8_t *) malloc(buffer_size);
+        // size_t bytesAdded = 0;
+        
         for (int i = 0; i < device_count; i++)
         {
             imageBuffer[i].put(multi_cap->capture_devices.at(i)->cv_color_img);
             depthBuffer[i].put(multi_cap->capture_devices.at(i)->cv_depth_img);
             depthBufferBin[i].put(multi_cap->capture_devices.at(i)->depthImage);
+            // memcpy(&allFramesBinBuffer[bytesAdded], &multi_cap->capture_devices.at(i)->depthImage, depthWidth * depthHeight);
+            // bytesAdded += depthWidth * depthHeight;
         }
+
+        // sprintf(outDepthBinAll, "/home/sc/streamingPipeline/analysisData/ref/frame_%d_depthBin", depthBinAllIdx);
+        // k4a::image depthBinAll = allFramesBin;
+        // std::ofstream saveDepthBinAll(outDepthBinAll, std::ios::binary);
+        // saveDepthBinAll.write(reinterpret_cast<char *>(allFramesBinBuffer), bytesAdded);
+        // saveDepthBinAll.close();
+        // depthBinAllIdx++;
 
         // mesh.RemoveVertexAttr("normals");
 
@@ -589,7 +600,6 @@ void generateMeshAndTransmit(std::vector<t::geometry::Image> *color_img_list, st
         // std::shared_ptr<open3d::geometry::TriangleMesh> decimated = transmitMesh.SimplifyQuadricDecimation(0.5*transmitMesh.triangles_.size(), 1000000000, 1.0);
         // meshes.put(*(decimated.get()));
         // meshes.put(transmitMesh);
-        // pthread_cond_signal(&cond1);
         // }
         // else
         // {
