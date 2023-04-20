@@ -161,7 +161,7 @@ int saveThreadsFinished = 0;
 int depthWidth = 640;
 int depthHeight = 576;
 int cameras = 4;
-int framesPerSetting = 10;
+int framesPerSetting = 100;
 
 int main(int argc, char **argv)
 {
@@ -188,6 +188,8 @@ int main(int argc, char **argv)
 
     std::ofstream allDepthBin("/home/sc/streamingPipeline/analysisData/ref/allDepthBin", std::ios::binary);
 
+    int frame_count = 0;
+
     for (int i = 0; i < framesPerSetting; i++)
     {
         // each frame output needs to be a 2x2 arrangement of input
@@ -211,37 +213,53 @@ int main(int argc, char **argv)
                 if (j == 0)
                 {
                     // std::cout << 2*row*depthWidth << std::endl;
-                    memcpy(&frameBufferOut[2 * row * depthWidth], &frameBufferIn[row * depthWidth], depthWidth);
+                    memcpy(&frameBufferOut[2 * row * depthWidth], &frameBufferIn[row * depthWidth], depthWidth* sizeof(uint16_t));
                 }
                 else if (j == 1)
                 {
                     // std::cout << depthWidth + 2*row*depthWidth << std::endl;
-                    memcpy(&frameBufferOut[depthWidth + 2 * row * depthWidth], &frameBufferIn[row * depthWidth], depthWidth);
+                    memcpy(&frameBufferOut[depthWidth + 2 * row * depthWidth], &frameBufferIn[row * depthWidth], depthWidth* sizeof(uint16_t));
                 }
                 else if (j == 2)
                 {
                     // std::cout << 2*depthHeight*depthWidth + 2*row*depthWidth << std::endl;
-                    memcpy(&frameBufferOut[2 * depthHeight * depthWidth + 2 * row * depthWidth], &frameBufferIn[row * depthWidth], depthWidth);
+                    memcpy(&frameBufferOut[2 * depthHeight * depthWidth + 2 * row * depthWidth], &frameBufferIn[row * depthWidth], depthWidth* sizeof(uint16_t));
                 }
                 else if (j == 3)
                 {
                     // std::cout << 2*depthHeight*depthWidth + depthWidth + 2*row*depthWidth << std::endl;
-                    memcpy(&frameBufferOut[2 * depthHeight * depthWidth + depthWidth + 2 * row * depthWidth], &frameBufferIn[row * depthWidth], depthWidth);
+                    memcpy(&frameBufferOut[2 * depthHeight * depthWidth + depthWidth + 2 * row * depthWidth], &frameBufferIn[row * depthWidth], depthWidth* sizeof(uint16_t));
                 }
             }
             // frameOut.write(reinterpret_cast<char *>(frameBufferOut+j*640*576), frameSizeOut);
         }
-        frameOut.write(reinterpret_cast<char *>(frameBufferOut), frameSizeOut);
+        
+        // cv::Mat tmp(576, 640, CV_16UC1, frameBufferIn);
+        // char outPath[1024 * 2] = {0};
+        // sprintf(outPath, "/home/sc/streamingPipeline/analysisData/trvl/%d.png", frame_count);
+        // std::cout << outPath << std::endl;
+        // cv::imwrite(outPath, tmp);
+
+
+        cv::Mat tmp(576*2, 640*2, CV_16UC1, frameBufferOut);
+        char outPath[1024 * 2] = {0};
+        sprintf(outPath, "/home/sc/streamingPipeline/analysisData/trvl/%d.png", frame_count);
+        std::cout << outPath << std::endl;
+        cv::imwrite(outPath, tmp);
+
+        frameOut.write(reinterpret_cast<char *>(frameBufferOut), frameSizeOut * sizeof(uint16_t));
         frameOut.close();
 
-        allDepthBin.write(reinterpret_cast<char *>(frameBufferOut), frameSizeOut);
+        allDepthBin.write(reinterpret_cast<char *>(frameBufferOut), frameSizeOut* sizeof(uint16_t));
         std::cout << allBytesAdded << " bytes" << std::endl;
         allBytesAdded += frameSizeOut;
-        
+        frame_count++;
         // now that a single frame has been created (from 4 camera depth images), 
         //   they must be appended together to create a video stream
     }
+    std::cout << "frame count\n" << frame_count << std::endl;
     allDepthBin.close();
+    
 
     // read in each individual frame
     // depthBufferBin[i].put(multi_cap->capture_devices.at(i)->depthImage);

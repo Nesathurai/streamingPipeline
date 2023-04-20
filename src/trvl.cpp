@@ -12,6 +12,8 @@ int TRVL = 1;
 int APPEND = 0;
 int width = 640 * 2;
 int height = 576 * 2;
+// int width = 640;
+// int height = 576;
 char *inFile;
 char *rootPath;
 
@@ -72,11 +74,15 @@ InputFile create_input_file(std::string folder_path, std::string filename)
     // std::ifstream input("/home/sc/streamingPipeline/analysisData/temporal-rvl-data/comm-camera-movement", std::ios::binary);
     // std::ifstream input("/home/sc/streamingPipeline/analysisData/temporal-rvl-data/bin", std::ios::binary);
 
-    if (input.fail())
-    {
+    // if (input.fail())
+    // {
         // throw std::exception("The filename was invalid.");
-        std::cerr << "The filename was invalid." << std::endl;
-    }
+        // std::cerr << "The filename was invalid." << std::endl;
+        std::cout << "goodbit \t" << input.good() << "\t";
+        std::cout << "eofbit \t" << input.eof() << "\t";
+        std::cout << "failbit \t" << input.bad() << "\t";
+        std::cout << "badbit \t" << input.rdstate() << "\t";
+    // }
 
     // int width;
     // int height;
@@ -148,10 +154,9 @@ float mse(std::vector<short> true_values, std::vector<short> encoded_values)
 void write_result_output_line(std::ofstream &result_output, InputFile &input_file, std::string type,
                               int change_threshold, int invalidation_threshold, Result result)
 {
-    result_output << input_file.filename() << ","
+    result_output << type << ","
                   << input_file.width() << ","
                   << input_file.height() << ","
-                  << type << ","
                   << change_threshold << ","
                   << invalidation_threshold << ","
                   << result.average_compression_time() << ","
@@ -163,6 +168,8 @@ void write_result_output_line(std::ofstream &result_output, InputFile &input_fil
 Result run_rvl(InputFile &input_file)
 {
     int frame_size = input_file.width() * input_file.height();
+    // std::cout << input_file.width() << std::endl;
+    // std::cout << input_file.height() << std::endl;
     int depth_buffer_size = frame_size * sizeof(short);
     // For the raw pixels from the input file.
     std::vector<short> depth_buffer(frame_size);
@@ -189,11 +196,17 @@ Result run_rvl(InputFile &input_file)
 
         auto depth_mat = create_depth_mat(input_file.width(), input_file.height(), depth_image.data());
 
-        cv::imshow("Depth", depth_mat);
-        if (cv::waitKey(1) >= 0)
-            break;
+        // char outPath[1024 * 2] = {0};
+        // sprintf(outPath, "/home/sc/streamingPipeline/analysisData/trvl/%d.png", frame_count);
+        // std::cout << outPath << std::endl;
+        // cv::imwrite(outPath, depth_mat);
+
+        // cv::imshow("Depth", depth_mat);
+        // if (cv::waitKey(1) >= 0)
+        //     break;
 
         compressed_size_sum += rvl_frame.size();
+        // std::cout << "trvl frame size \t" << rvl_frame.size() << "\t";
         ++frame_count;
     }
     input_file.input_stream().close();
@@ -237,10 +250,14 @@ Result run_rvl(InputFile &input_file)
 //     }
 // }
 
-Result run_trvl(InputFile &input_file)
+Result run_trvl(InputFile &input_file, short change_threshold, int invalidation_threshold)
 {
     int frame_size = input_file.width() * input_file.height();
+    // std::cout << "width \t" << input_file.width() << "\t";
+    // std::cout << "height \t" << input_file.height() << "\t";
+
     int depth_buffer_size = frame_size * sizeof(short);
+    // std::cout << "depth buffer size \t" << depth_buffer_size << "\t";
     // For the raw pixels from the input file.
     std::vector<short> depth_buffer(frame_size);
     // For detecting changes and freezing other pixels.
@@ -261,16 +278,18 @@ Result run_trvl(InputFile &input_file)
     int zero_psnr_frame_count = 0;
     int frame_count = 0;
 
-    while (!input_file.input_stream().eof())
+    while ((!input_file.input_stream().eof()))
     {
         input_file.input_stream().read(reinterpret_cast<char *>(depth_buffer.data()), depth_buffer_size);
         Timer compression_timer;
         // Update the TRVL pixel values with the raw depth pixels.
         for (int i = 0; i < frame_size; ++i)
         {
-            trvl::update_pixel(trvl_pixels[i], depth_buffer[i], CHANGE_THRESHOLD, INVALIDATION_THRESHOLD);
+            trvl::update_pixel(trvl_pixels[i], depth_buffer[i], change_threshold, invalidation_threshold);
         }
 
+        // std::cout << "depth buffer\t" << depth_buffer_size << "\t";
+        // std::cout << "frame size \t" << frame_size << "\t";
         // For the first frame, since there is no previous frame to diff, run vanilla RVL.
         if (frame_count == 0)
         {
@@ -279,6 +298,7 @@ Result run_trvl(InputFile &input_file)
                 prev_pixel_values[i] = trvl_pixels[i].value;
             }
             rvl_frame = rvl::compress(prev_pixel_values.data(), frame_size);
+            // std::cout << "trvl frame size \t" << rvl_frame.size() << "\t";
             compression_time_sum += compression_timer.milliseconds();
 
             Timer decompression_timer;
@@ -312,11 +332,17 @@ Result run_trvl(InputFile &input_file)
 
         auto depth_mat = create_depth_mat(input_file.width(), input_file.height(), depth_image.data());
 
-        cv::imshow("Depth", depth_mat);
-        if (cv::waitKey(1) >= 0)
-            break;
+        char outPath[1024 * 2] = {0};
+        sprintf(outPath, "/home/sc/streamingPipeline/analysisData/trvl/%d.png", frame_count);
+        std::cout << outPath << std::endl;
+        cv::imwrite(outPath, depth_mat);
+        // cv::imshow("Depth", depth_mat);
+        // cv::imwrite(outPath, depth_mat);
+        // if (cv::waitKey(1) >= 0)
+        //     break;
 
         compressed_size_sum += rvl_frame.size();
+        // std::cout << "trvl frame size \t" << rvl_frame.size() << "\t";
         // The first frame goes through vanilla RVL which is lossless.
         float mse_value = mse(depth_buffer, depth_image);
         if (mse_value != 0.0f)
@@ -383,7 +409,8 @@ int main(int argc, char **argv)
         return 0;
     }
 
-    const std::string RESULT_OUTPUT_FILE_PATH = "/home/sc/streamingPipeline/analysisData/temporal-rvl-data/result.csv";
+    // const std::string RESULT_OUTPUT_FILE_PATH = "/home/sc/streamingPipeline/analysisData/temporal-rvl-data/result.csv";
+    const std::string RESULT_OUTPUT_FILE_PATH = "/home/sc/streamingPipeline/analysisData/temporal-rvl-data/" + std::string(inFile) + "_trvl" + ".csv";
 
     // char outPath[1024 * 2] = {0};
     // char prefix[1024] = {0};
@@ -398,35 +425,35 @@ int main(int argc, char **argv)
         if (TRVL == 1)
         {
             // reset_input_file(input_file);
-            Result trvl_result(run_trvl(input_file));
-            write_result_output_line(result_output, input_file, "trvl", CHANGE_THRESHOLD, INVALIDATION_THRESHOLD, trvl_result);
+            Result trvl_result(run_trvl(input_file, CHANGE_THRESHOLD, INVALIDATION_THRESHOLD));
+            write_result_output_line(result_output, input_file, "1", CHANGE_THRESHOLD, INVALIDATION_THRESHOLD, trvl_result);
             result_output.close();
         }
         else
         {
             Result rvl_result(run_rvl(input_file));
-            write_result_output_line(result_output, input_file, "rvl", 0, 0, rvl_result);
+            write_result_output_line(result_output, input_file, "0", 0, 0, rvl_result);
             result_output.close();
         }
     }
     else
     {
         std::ofstream result_output(RESULT_OUTPUT_FILE_PATH, std::ios::out);
-        result_output << "filename,width,height,type,change_threshold,invalidation_threshold,";
+        result_output << "trvl,width,height,change_threshold,invalidation_threshold,";
         result_output << "average_compression_time,average_decompression_time,";
         result_output << "compression_ratio,average_psnr" << std::endl;
 
         if (TRVL == 1)
         {
             // reset_input_file(input_file);
-            Result trvl_result(run_trvl(input_file));
-            write_result_output_line(result_output, input_file, "trvl", CHANGE_THRESHOLD, INVALIDATION_THRESHOLD, trvl_result);
+            Result trvl_result(run_trvl(input_file,CHANGE_THRESHOLD, INVALIDATION_THRESHOLD));
+            write_result_output_line(result_output, input_file, "1", CHANGE_THRESHOLD, INVALIDATION_THRESHOLD, trvl_result);
             result_output.close();
         }
         else
         {
             Result rvl_result(run_rvl(input_file));
-            write_result_output_line(result_output, input_file, "rvl", 0, 0, rvl_result);
+            write_result_output_line(result_output, input_file, "0", 0, 0, rvl_result);
             result_output.close();
         }
     }

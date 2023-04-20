@@ -21,13 +21,16 @@ short abs_diff(short x, short y)
 }
 
 void update_pixel(Pixel& pixel, short raw_value, short change_threshold, int invalidation_threshold) {
+    // std::cout << change_threshold << " " << invalidation_threshold << std::endl;
+    // if(change_threshold != 0 || invalidation_threshold != 0){
+    //     std::cout << change_threshold << " " << invalidation_threshold << std::endl;
+    // }
     if (pixel.value == 0) {
         if (raw_value > 0)
             pixel.value = raw_value;
 
         return;
     }
-
 
     // Reset the pixel if the depth value indicates the input was invalid two times in a row.
     if (raw_value == 0) {

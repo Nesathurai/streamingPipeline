@@ -1,4 +1,5 @@
-framesPerSetting = 10 
+framesPerSetting = 100
 voxelSizes = [0.01, 0.02]
 bitRates = ["1M", "2M", "5M", "10M"]
 clRates = [0, 3, 7, 10]
+trvlParams = [[0, 5, 10, 20, 30, 40, 50]|[0, 1, 2, 3, 5, 10]]

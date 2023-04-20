@@ -214,6 +214,8 @@ Result run_rvl(InputFile& input_file)
 Result run_trvl(InputFile& input_file, short change_threshold, int invalidation_threshold)
 {
     int frame_size = input_file.width() * input_file.height();
+    // std::cout << input_file.width() << std::endl;
+    // std::cout << input_file.height() << std::endl;
     int depth_buffer_size = frame_size * sizeof(short);
     // For the raw pixels from the input file.
     std::vector<short> depth_buffer(frame_size);

@@ -183,19 +183,18 @@ int main(int argc, char **argv)
     //                                                 depth_trunc,
     //                                                 convert_rgb_to_intensity);
     
-    std::shared_ptr<geometry::RGBDImage> rgbd_image_ptr = geometry::RGBDImage::CreateFromColorAndDepth(color.ToLegacy(), depth.ToLegacy(), 
-                                                    depth_scale, 
-                                                    depth_trunc,
-                                                    convert_rgb_to_intensity);
+    t::geometry::RGBDImage rgbd_image(color, depth);
 
-    geometry::RGBDImage *rgbd_image = rgbd_image_ptr.get();
-
-    std::shared_ptr<geometry::PointCloud> cloud = geometry::PointCloud::CreateFromRGBDImage(*rgbd_image, intrinsic);
-    t::geometry::PointCloud cloud_t = t::geometry::PointCloud::FromLegacy(*(cloud.get()));
-    t::geometry::PointCloud cloud_tf = cloud_t.Transform(extrinsic_tf.Inverse());
+    // t::geometry::RGBDImage *rgbd_image = rgbd_image_ptr.get();
+    // std::shared_ptr<geometry::PointCloud> cloud = geometry::PointCloud::CreateFromRGBDImage(*rgbd_image, intrinsic);
+    t::geometry::PointCloud cloud = t::geometry::PointCloud::CreateFromRGBDImage(rgbd_image, intrinsic_t);
+    // t::geometry::PointCloud cloud_t = t::geometry::PointCloud::FromLegacy(*(cloud.get()));
+    t::geometry::PointCloud cloud_tf = cloud.Transform(extrinsic_tf.Inverse());
 
     char outPC[1024] = {0};
     sprintf(outPC, "/home/sc/streamingPipeline/analysisData/meshPCs/%s.ply", nameStr.c_str());
+    // t::geometry::PointCloud *PCOUT = cloud.get();
+    // open3d::t::io::WritePointCloud(outPC, cloud_tf, true);
     open3d::t::io::WritePointCloud(outPC, cloud_tf);
 
     return 1;
