@@ -248,33 +248,6 @@ Result run_rvl(InputFile &input_file)
     return Result(average_compression_time, average_decompression_time, compression_ratio, 0.0f);
 }
 
-// void run_trvl(InputFile &input_file, short change_threshold, int invalidation_threshold, char *outPath)
-// {
-//     int frame_size = input_file.width() * input_file.height();
-
-//     trvl::Encoder encoder(frame_size, change_threshold, invalidation_threshold);
-//     trvl::Decoder decoder(frame_size);
-
-//     std::vector<short> depth_buffer(frame_size);
-//     int frame_count = 0;
-
-//     while (!input_file.input_stream().eof())
-//     {
-//         input_file.input_stream().read(reinterpret_cast<char *>(depth_buffer.data()), frame_size * sizeof(short));
-
-//         bool keyframe = frame_count++ % 30 == 0;
-//         auto trvl_frame = encoder.encode(depth_buffer.data(), keyframe);
-//         auto depth_image = decoder.decode(trvl_frame.data(), keyframe);
-//         auto depth_mat = create_depth_mat(input_file.width(), input_file.height(), depth_image.data());
-
-//         // cv::imshow("Depth", depth_mat);
-//         cv::imwrite(outPath, depth_mat);
-//         std::cout << "writing" << std::endl;
-//         // if (cv::waitKey(1) >= 0)
-//         //     return;
-//     }
-// }
-
 template <typename T>
 struct Entry
 {
@@ -294,7 +267,6 @@ struct Entry
     Entry<T>(){};
     Entry<T>(bool z_, T z) : z_(z_), z(z){};
     Entry<T>(bool sv_, T d, T l) : sv_(sv_), d(d), l(l){};
-    // Entry<T>(bool c_, T c) : c_(c_), c(c){};
     Entry<T>(bool sv_, T d, T l, bool c_, T c) : sv_(sv_), d(d), l(l), c_(c_), c(c){};
     Entry<T>(bool z_, T z, bool sv_, T d, T l, bool c_, T c) : z_(z_), z(z), sv_(sv_), d(d), l(l), c_(c_), c(c){};
     Entry<T>(const Entry<T> &entry) : z_(entry.z_), z(entry.z), sv_(entry.sv_), d(entry.d), l(entry.l), c_(entry.c_), c(entry.c){};
@@ -413,9 +385,7 @@ int decompLZ77(std::deque<Entry<T>> inBuf, std::deque<T> &out)
         inBuf.pop_front();
         count++;
     }
-    // std::cout << "decompressed:\t\t" << out << std::endl;
-    // std::cout << out.max_size() << std::endl;
-    // std::cout << out.size() << std::endl;
+    // std::cout << "Decompression Finished" << std::endl;
     return 1;
 }
 
@@ -446,11 +416,11 @@ int check(const std::deque<T> &buf0, const std::deque<T> &buf1)
 }
 
 template <typename T>
-int compLZ77(std::deque<T> inBuf, std::deque<Entry<T>> &outBuf)
+int compLZ77(const std::deque<T> &inBuf, std::deque<Entry<T>> &outBuf)
 {
     // reference: https://en.wikipedia.org/wiki/LZ77_and_LZ78#Pseudocode
-    int searchWindow = 100;
-    int lookWindow = 20;
+    int searchWindow = 1000;
+    int lookWindow = 10;
     int count = 0;
 
     if (searchWindow > inBuf.size())
@@ -466,11 +436,11 @@ int compLZ77(std::deque<T> inBuf, std::deque<Entry<T>> &outBuf)
     // TODO: fix with rearranging pointers and make sure no data is being copied
     std::deque<T> searchBuffer;
 
-    typename std::deque<T>::const_iterator searchL = searchBuffer.begin();
-    typename std::deque<T>::const_iterator searchR = searchBuffer.end();
     typename std::deque<T>::const_iterator lookL = inBuf.begin();
     typename std::deque<T>::const_iterator lookR = inBuf.begin() + lookWindow;
     typename std::deque<T>::const_iterator end = inBuf.end();
+    typename std::deque<T>::const_iterator searchL; 
+    typename std::deque<T>::const_iterator searchR;
 
     while (lookL != lookR)
     {
@@ -490,7 +460,7 @@ int compLZ77(std::deque<T> inBuf, std::deque<Entry<T>> &outBuf)
         // std::cout << "look buffer: " << lookBuffer << std::endl;
 
         // get run of zeros
-        long totalZeros = 0;
+        // long totalZeros = 0;
         T zeros = 0;
         // while lookL dereferences to 0
         while ((*lookL) == 0)
@@ -502,7 +472,7 @@ int compLZ77(std::deque<T> inBuf, std::deque<Entry<T>> &outBuf)
                 {
                     // only zeros case
                     outBuf.push_back(Entry<T>(true, zeros));
-                    totalZeros += zeros;
+                    // totalZeros += zeros;
                     zeros = 0;
                 }
                 zeros++;
@@ -521,7 +491,7 @@ int compLZ77(std::deque<T> inBuf, std::deque<Entry<T>> &outBuf)
             std::cout << "zeros invalid: " << zeros << " -> BAD" << std::endl;
         }
 
-        totalZeros += zeros;
+        // totalZeros += zeros;
 
         Entry<T> entry = getLargestSubvec<T>(searchL, searchR, lookL, lookR, end);
         if (zeros > 0)
@@ -563,30 +533,8 @@ int compLZ77(std::deque<T> inBuf, std::deque<Entry<T>> &outBuf)
         count++;
     }
 
-    std::cout << "Compression Finished" << std::endl;
-
-    if (inBuf.size() < 100)
-    {
-        std::cout << "compressed:\t\t" << outBuf << std::endl;
-        // std::cout << "input:\t\t\t" << inBuf << std::endl;
-        // std::cout << "decompressed:\t\t" << decompLZ77(outBuf) << std::endl;
-    }
-    // std::cout << "broken here 0" << std::endl;
-    std::deque<T> decomp;
-    decompLZ77<T>(outBuf, decomp);
-    std::cout << "Decompression Finished" << std::endl;
-    // std::cout << "broken here 1" << std::endl;
-    int pass = check(inBuf, decomp);
-    std::cout << "pass: " << pass << std::endl;
-
-    if (!pass)
-    {
-        std::cout << "\t original size: " << inBuf.size() << ", uncompressed size: " << decomp.size() << std::endl;
-        std::cout << inBuf << std::endl;
-        std::cout << decomp << std::endl;
-    }
-
-    std::cout << "compression ratio: " << float(sizeof(short) * inBuf.size()) / float((5 * sizeof(T) * outBuf.size()));
+    // std::cout << "Compression Finished" << std::endl;
+    std::cout << "compression ratio: " << float(sizeof(short) * inBuf.size()) / float((5 * sizeof(T) * outBuf.size())) << std::endl;
     return 1;
 }
 
@@ -636,36 +584,8 @@ Result run_trvl(InputFile &input_file, short change_threshold, int invalidation_
     // std::ifstream abc("/home/sc/streamingPipeline/analysisData/ref/allDepthBin_1",std::ios::in | std::ios::binary);
     // while ((!input_file.input_stream().eof()))
     // while ((abc.read((char *)(depth_buffer.data()), depth_buffer_size)))
-    while ((input_file.input_stream().read((char *)(depth_buffer.data()), depth_buffer_size)) && (frame_count < 5))
+    while ((input_file.input_stream().read((char *)(depth_buffer.data()), depth_buffer_size)))
     {
-        // if (0)
-        // {
-        // compressing the frame by itself without RVL
-        // std::deque<short> abc(depth_buffer.begin(), depth_buffer.end());
-        // std::deque<Entry<short>> tmp1;
-        // compLZ77(abc, tmp1);
-
-        // do rvl then compress
-
-        // rvl_frame = rvl::compress(depth_buffer.data(), frame_size);
-
-        // for(int i = 0; i < 100; i++){
-        //     printf("%d\n",rvl_frame[i]);
-        // }
-
-        // std::deque<char> def(rvl_frame.begin(), rvl_frame.end());
-        // std::deque<Entry<char>> tmp2;
-        // compLZ77(def, tmp2);
-        // frame_count++;
-        // }
-        // else
-        // {
-        // std::vector<short> abc = {9, 13, 9, 13, 37, 13, 9, 13, 9, 13, 9, 9};
-        // std::vector<std::vector<short>> tmp;
-        // compLZ77(abc, tmp);
-        // for(int i = 1000; i < 1010; i++){
-        //     std::cout << depth_buffer[i] << " ";
-        // }
         std::cout << frame_count << std::endl;
         // input_file.input_stream().read(reinterpret_cast<char *>(depth_buffer.data()), depth_buffer_size);
         // input_file.input_stream().read(pixel_diffs_char, depth_buffer_size);
@@ -681,6 +601,7 @@ Result run_trvl(InputFile &input_file, short change_threshold, int invalidation_
         // std::cout << "depth buffer\t" << depth_buffer_size << "\t";
         // std::cout << "frame size \t" << frame_size << "\t";
         // For the first frame, since there is no previous frame to diff, run vanilla RVL.
+        // TODO: clean this up? Not my code, don't want to screw up 
         if (frame_count == 0)
         {
             for (int i = 0; i < frame_size; ++i)
@@ -704,80 +625,46 @@ Result run_trvl(InputFile &input_file, short change_threshold, int invalidation_
             {
                 short value = trvl_pixels[i].value;
                 pixel_diffs[i] = value - prev_pixel_values[i];
-                if (pixel_diffs[i] > 65535)
-                {
-                    std::cout << pixel_diffs[i] << std::endl;
-                }
-                // if (frame_count == 2)
-                // {
                 diff_output << pixel_diffs[i] << ",";
-                // }
-                // std::cout  << value << ",";
-                // std::cout << value - prev_pixel_values[i] << " ";
-
                 prev_pixel_values[i] = value;
-
-                // if(pixel_diffs[i] != 0){
-                //     std::cout << pixel_diffs[i] << " " ;
-                // }
             }
-            // std::deque<int> abc;
-            // std::deque<Entry<short>> abc;
-            // abc.push_back(Entry<short>(0,0,666666666));
-            // std::cout << abc.max_size() << std::endl;
-            // std::vector<short> tmpVec(pixel_diffs.begin(), pixel_diffs.end());
-            std::deque<short> def(pixel_diffs.begin(), pixel_diffs.end());
-            // std::cout << def.size() << std::endl;
-            std::deque<Entry<short>> tmp2;
-            compLZ77(def, tmp2);
-            // std::cout << frame_count << std::endl;
 
+            // the encoding LZRVL
             // Compress and decompress the difference.
-
-            // rvl_frame = rvl::compress(pixel_diffs.data(), frame_size);
-            rvl_frame = rvl::compress(pixel_diffs.data(), frame_size);
+            std::deque<short> difDeque(pixel_diffs.begin(), pixel_diffs.end());
+            std::deque<Entry<short>> compressed;
+            compLZ77(difDeque, compressed);
             compression_time_sum += compression_timer.milliseconds();
 
+            std::deque<short> decomp;
             Timer decompression_timer;
-            auto diff_frame = rvl::decompress(rvl_frame.data(), frame_size);
-            // Update depth_image of the previous frame using the difference
-            // between the previous frame and the current frame.
-            for (int i = 0; i < frame_size; ++i)
-            {
-                depth_image[i] += diff_frame[i];
-            }
+            decompLZ77<short>(compressed, decomp);
             decompression_time_sum += decompression_timer.milliseconds();
-
-            auto depth_mat2 = create_depth_mat(input_file.width(), input_file.height(), pixel_diffs.data());
-            char outPath2[1024 * 2] = {0};
-            sprintf(outPath2, "/home/sc/streamingPipeline/analysisData/trvl/%d_del.png", frame_count);
-            cv::imwrite(outPath2, depth_mat2);
+            
+            int pass = check(difDeque, decomp);
+            
+            if (!pass)
+            {
+                std::cout << "pass: " << pass << std::endl;
+                std::cout << "\t original size: " << difDeque.size() << ", uncompressed size: " << decomp.size() << std::endl;
+                assert(pass == 1);
+                // std::cout << inBuf << std::endl;
+                // std::cout << decomp << std::endl;
+            }
+            // compressed size - using *5 since there are 4 T sized values, plus 3 bits so being conservative 
+            compressed_size_sum += float((5 * sizeof(short) * compressed.size()));
+            
+            // auto depth_mat2 = create_depth_mat(input_file.width(), input_file.height(), pixel_diffs.data());
+            // char outPath2[1024 * 2] = {0};
+            // sprintf(outPath2, "/home/sc/streamingPipeline/analysisData/trvl/%d_del.png", frame_count);
+            // cv::imwrite(outPath2, depth_mat2);
         }
 
-        auto depth_mat = create_depth_mat(input_file.width(), input_file.height(), depth_image.data());
-        char outPath[1024 * 2] = {0};
-        sprintf(outPath, "/home/sc/streamingPipeline/analysisData/trvl/%d_depth.png", frame_count);
-        cv::imwrite(outPath, depth_mat);
-        // cv::imshow("Depth", depth_mat);
-        // cv::imwrite(outPath, depth_mat);
-        // if (cv::waitKey(1) >= 0)
-        //     break;
-
-        compressed_size_sum += rvl_frame.size();
-        // std::cout << "trvl frame size \t" << rvl_frame.size() << "\t";
-        // The first frame goes through vanilla RVL which is lossless.
-        float mse_value = mse(depth_buffer, depth_image);
-        // std::cout << mse_value << std::endl;
-        if (mse_value != 0.0f)
-        {
-            psnr_sum += 20.0f * log10(max(depth_buffer) / sqrt(mse_value));
-        }
-        else
-        {
-            ++zero_psnr_frame_count;
-        }
+        // auto depth_mat = create_depth_mat(input_file.width(), input_file.height(), depth_image.data());
+        // char outPath[1024 * 2] = {0};
+        // sprintf(outPath, "/home/sc/streamingPipeline/analysisData/trvl/%d_depth.png", frame_count);
+        // cv::imwrite(outPath, depth_mat);       
         ++frame_count;
-        // }
     }
     input_file.input_stream().close();
     diff_output.close();
