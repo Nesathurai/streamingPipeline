@@ -158,6 +158,9 @@ target_link_libraries(trvl
 #set_target_properties(trvl PROPERTIES
 #  CXX_STANDARD 14
 #)
+target_compile_options(trvl PUBLIC
+  "-O3"
+  )
 
 add_executable(trvlTest
   include/rvl.h
@@ -170,7 +173,10 @@ target_link_libraries(trvlTest
 #set_target_properties(trvlTest PROPERTIES
 #  CXX_STANDARD 14
 #)
-
+target_compile_options(trvlTest PUBLIC
+  "-O3"
+  #"-lstdc++"
+  )
 
 add_executable(paper
   include/rvl.h
@@ -183,3 +189,6 @@ target_link_libraries(paper
 #set_target_properties(paper PROPERTIES
 #  CXX_STANDARD 14
 #)
+target_compile_options(paper PUBLIC
+  "-O3"
+  )

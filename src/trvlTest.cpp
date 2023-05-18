@@ -278,20 +278,33 @@ Result run_rvl(InputFile &input_file)
 template <typename T>
 struct Entry
 {
-    int d;
-    int l;
-    T data;
-    int discardData = 0;
-    Entry(int d, int l, T data) : d(d), l(l), data(data){};
-    Entry(int d, int l, T data, int discardData) : d(d), l(l), data(data), discardData(discardData){};
-    Entry(const Entry<T>& entry) : d(entry.d), l(entry.l), data(entry.data), discardData(entry.discardData){};
+    // zeros (_ means indicator)
+    bool z_ = false;
+    T z = 0;
 
+    // subvec
+    bool sv_ = false;
+    T d = 0;
+    T l = 0;
+
+    // c
+    bool c_ = false;
+    T c = 0;
+
+    Entry<T>(){};
+    Entry<T>(bool z_, T z) : z_(z_), z(z){};
+    Entry<T>(bool sv_, T d, T l) : sv_(sv_), d(d), l(l){};
+    // Entry<T>(bool c_, T c) : c_(c_), c(c){};
+    Entry<T>(bool sv_, T d, T l, bool c_, T c) : sv_(sv_), d(d), l(l), c_(c_), c(c){};
+    Entry<T>(bool z_, T z, bool sv_, T d, T l, bool c_, T c) : z_(z_), z(z), sv_(sv_), d(d), l(l), c_(c_), c(c){};
+    Entry<T>(const Entry<T> &entry) : z_(entry.z_), z(entry.z), sv_(entry.sv_), d(entry.d), l(entry.l), c_(entry.c_), c(entry.c){};
 };
 
 template <typename T>
 std::ostream &operator<<(std::ostream &os, const Entry<T> &entry)
 {
-    os << "(" << entry.d << ", " << entry.l << ", " << entry.data << ")";
+    os << "[z_: " << entry.z_ << ", sv_: " << entry.sv_ << ", c_: " << entry.c_ << "]";
+    os << "(" << entry.z << ", " << entry.d << ", " << entry.l << ", " << entry.c << ")";
     return os;
 }
 
@@ -300,6 +313,8 @@ Entry<T> getLargestSubvec(typename std::deque<T>::const_iterator searchL, typena
 {
     // std::cout << "search buffer: " << searchBuffer << std::endl;
     // std::cout << "look buffer: " << lookBuffer << std::endl;
+
+    int searchSize = distance(searchL, searchR);
 
     // start with largest lookBuffer, then pop_back to reduce size of the string to search for
     while (lookL != lookR)
@@ -311,60 +326,131 @@ Entry<T> getLargestSubvec(typename std::deque<T>::const_iterator searchL, typena
             // if at end, then do not copy character
             if (lookR == end)
             {
-                return Entry(distance(res, lookL), distance(lookL, lookR), *lookR, 1);
+                // TODO: fix problem here with dist from res to lookL
+                // sv_ = true, d, l, c_ = false, c
+                return Entry<T>(true, distance(res, searchR), distance(lookL, lookR));
             }
             else
             {
-                return Entry(distance(res, lookL), distance(lookL, lookR), *lookR);
+                // sv_ = true, d, l, c_ = true, c
+                return Entry<T>(true, distance(res, searchR), distance(lookL, lookR), true, *lookR);
             }
         }
         lookR -= 1;
     }
-    if (lookR == end)
+    if (lookL == end)
     {
-        return Entry(0, 0, *lookR, 1);
+        // sv_ = false, c_ false
+        return Entry<T>();
     }
     else
     {
-        return Entry(0, 0, *lookR);
+        // sv_ = false, c_ = true
+        return Entry<T>(false, 0, 0, true, *lookL);
     }
 }
 
 template <typename T>
-std::deque<T> decompLZ77(std::deque<Entry<T>> outBuf)
+int decompLZ77(std::deque<Entry<T>> inBuf, std::deque<T> &out)
 {
+    // destructive to inBuf
     // read each element and construct the decompressed data
-    std::deque<T> out;
-    typename std::deque<Entry<T>>::const_iterator itr = outBuf.begin();
-    int size = outBuf.size();
+    // std::deque<T> out;
+    std::deque<T> searchBuffer;
+    // typename std::deque<Entry<T>>::const_iterator itr = inBuf.begin();
+
+    // int size = inBuf.size();
     int count = 0;
-    while (outBuf.begin() != outBuf.end())
+
+    while (inBuf.begin() != inBuf.end())
     {
-        Entry<T> entry = outBuf.front();
+
+        Entry<T> entry = inBuf.front();
+        // std::cout << entry << std::endl;
+        // std::cout << searchBuffer << std::endl;
+
         // std::cout << entry << std::endl;
         // move back d spaces
         // copy l amount of data
-        out.insert(out.end(), out.end() - entry.d, out.end() - entry.d + entry.l);
-        // add the terminating character
-        if (entry.discardData == 0)
+
+        // searchBuffer.insert(searchBuffer.end(), searchBuffer.end() - entry.d, searchBuffer.end() - entry.d + entry.l);
+        // out.insert(out.end(), searchBuffer.end() - entry.d, searchBuffer.end() - entry.d + entry.l);
+
+        // appending zeros
+        if (entry.z_)
         {
-            out.push_back(entry.data);
+            // by definition cannot have 0 zeros, but double check
+            if (entry.z > 0)
+            {
+                std::deque<T> zerosRun(entry.z, 0);
+                out.insert(out.end(), zerosRun.begin(), zerosRun.end());
+            }
+            else
+            {
+                std::cout << "zeros is: " << entry.z << " but cannot be <= 0 -> BAD" << std::endl;
+            }
         }
-        outBuf.pop_front();
+        // copying over data while maintaining separate search data
+        // TODO: something weird about the bounds of copying to search then to out
+        if (entry.sv_)
+        {
+            std::deque<T> tmp(searchBuffer.end() - entry.d, searchBuffer.end() - entry.d + entry.l);
+            // searchBuffer.insert(searchBuffer.end(), searchBuffer.end() - entry.d, searchBuffer.end() - entry.d + entry.l);
+            // out.insert(out.end(), searchBuffer.end() - entry.d, searchBuffer.end() - entry.d + entry.l);
+            searchBuffer.insert(searchBuffer.end(), tmp.begin(), tmp.end());
+            out.insert(out.end(), tmp.begin(), tmp.end());
+        }
+        if (entry.c_)
+        {
+            searchBuffer.push_back(entry.c);
+            out.push_back(entry.c);
+        }
+        if (!entry.z_ && !entry.sv_ && !entry.c_)
+        {
+            std::cout << "z_ = sv_ = c_ = 0 -> BAD uninitialized entry present " << std::endl;
+            return -1;
+        }
+        inBuf.pop_front();
         count++;
-        // std::cout << "decompressed: " << out << std::endl;
     }
     // std::cout << "decompressed:\t\t" << out << std::endl;
+    // std::cout << out.max_size() << std::endl;
+    // std::cout << out.size() << std::endl;
+    return 1;
+}
 
-    return out;
+template <typename T>
+int check(const std::deque<T> &buf0, const std::deque<T> &buf1)
+{
+    int ret = 1;
+    int count = 0;
+    typename std::deque<T>::const_iterator b0 = buf0.begin();
+    typename std::deque<T>::const_iterator b1 = buf1.begin();
+
+    if (buf0.size() != buf1.size())
+    {
+        std::cout << "b0 size: " << buf0.size() << ", b1 size: " << buf1.size() << std::endl;
+    }
+    while (b0 != buf0.end())
+    {
+        if (*b0 != *b1)
+        {
+            std::cout << count << " -> b0: " << *b0 << ", b1: " << *b1 << std::endl;
+            ret = 0;
+        }
+        b0++;
+        b1++;
+        count++;
+    }
+    return ret;
 }
 
 template <typename T>
 int compLZ77(std::deque<T> inBuf, std::deque<Entry<T>> &outBuf)
 {
     // reference: https://en.wikipedia.org/wiki/LZ77_and_LZ78#Pseudocode
-    int searchWindow = 1000;
-    int lookWindow = 25;
+    int searchWindow = 100;
+    int lookWindow = 20;
     int count = 0;
 
     if (searchWindow > inBuf.size())
@@ -376,56 +462,108 @@ int compLZ77(std::deque<T> inBuf, std::deque<Entry<T>> &outBuf)
         lookWindow = searchWindow;
     }
 
-    typename std::deque<T>::const_iterator searchL = inBuf.begin();
-    typename std::deque<T>::const_iterator searchR = inBuf.begin();
+    // need to maintain a separate search (virtually) contiguous
+    // TODO: fix with rearranging pointers and make sure no data is being copied
+    std::deque<T> searchBuffer;
+
+    typename std::deque<T>::const_iterator searchL = searchBuffer.begin();
+    typename std::deque<T>::const_iterator searchR = searchBuffer.end();
     typename std::deque<T>::const_iterator lookL = inBuf.begin();
     typename std::deque<T>::const_iterator lookR = inBuf.begin() + lookWindow;
-
     typename std::deque<T>::const_iterator end = inBuf.end();
 
-    while ((lookL != lookR))
+    while (lookL != lookR)
     {
-        // match longest substr of input that exists search window
-        // set search buffer
-        // std::deque<T> searchBuffer(searchL, searchR);
+        // ensure that search buffer is of the right size
+        while (searchBuffer.size() > searchWindow)
+        {
+            searchBuffer.pop_front();
+        }
+        // update search buffer bounds
+        searchL = searchBuffer.begin();
+        searchR = searchBuffer.end();
+
         // std::cout << "search buffer: " << searchBuffer << std::endl;
 
         // set lookBuffer
         // std::deque<T> lookBuffer(lookL, lookR);
         // std::cout << "look buffer: " << lookBuffer << std::endl;
+
+        // get run of zeros
+        long totalZeros = 0;
+        T zeros = 0;
+        // while lookL dereferences to 0
+        while ((*lookL) == 0)
+        {
+            // std::cout << "loop " << std::endl;
+            if ((lookL != lookR) && (lookL != inBuf.end()) && (lookR != inBuf.end()))
+            {
+                if (zeros == SHRT_MAX)
+                {
+                    // only zeros case
+                    outBuf.push_back(Entry<T>(true, zeros));
+                    totalZeros += zeros;
+                    zeros = 0;
+                }
+                zeros++;
+                lookL += 1;
+                lookR += 1;
+            }
+            else
+            {
+                break;
+            }
+        }
+
+        // std::cout << zeros << std::endl;
+        if ((zeros >= SHRT_MAX) || (zeros < 0))
+        {
+            std::cout << "zeros invalid: " << zeros << " -> BAD" << std::endl;
+        }
+
+        totalZeros += zeros;
+
         Entry<T> entry = getLargestSubvec<T>(searchL, searchR, lookL, lookR, end);
+        if (zeros > 0)
+        {
+            entry.z_ = true;
+            entry.z = zeros;
+        }
+
         outBuf.push_back(entry);
         // std::cout << entry << std::endl;
+        // std::cout << searchBuffer.size() << std::endl;
 
+        // add copied data to search buffer and add terminating character
+        if (entry.sv_)
+        {
+            searchBuffer.insert(searchBuffer.end(), searchBuffer.end() - entry.d, searchBuffer.end() - entry.d + entry.l);
+        }
+        if (entry.c_)
+        {
+            searchBuffer.push_back(entry.c);
+        }
+
+        // l always 1 at minimum
         int l = entry.l + 1;
 
+        // incrementally update bounds to ensure no overflow
         for (int i = 0; i < l; i++)
         {
-            // update bounds of search
-            if (distance(searchL, searchR) > searchWindow)
-            {
-                if (searchL != inBuf.end())
-                {
-                    searchL += 1;
-                }
-            }
-            if (searchR != inBuf.end())
-            {
-                searchR += 1;
-            }
-
             // update bounds of look
             if (lookL != inBuf.end())
             {
-                lookL += 1;
+                lookL++;
             }
             if (lookR != inBuf.end())
             {
-                lookR += 1;
+                lookR++;
             }
         }
         count++;
     }
+
+    std::cout << "Compression Finished" << std::endl;
 
     if (inBuf.size() < 100)
     {
@@ -433,8 +571,22 @@ int compLZ77(std::deque<T> inBuf, std::deque<Entry<T>> &outBuf)
         // std::cout << "input:\t\t\t" << inBuf << std::endl;
         // std::cout << "decompressed:\t\t" << decompLZ77(outBuf) << std::endl;
     }
-    std::cout << "pass: " << (inBuf == decompLZ77(outBuf)) << std::endl;
-    std::cout << "compression ratio: " << float(sizeof(T) * inBuf.size()) / float((3 * sizeof(T) * outBuf.size())) << std::endl;
+    // std::cout << "broken here 0" << std::endl;
+    std::deque<T> decomp;
+    decompLZ77<T>(outBuf, decomp);
+    std::cout << "Decompression Finished" << std::endl;
+    // std::cout << "broken here 1" << std::endl;
+    int pass = check(inBuf, decomp);
+    std::cout << "pass: " << pass << std::endl;
+
+    if (!pass)
+    {
+        std::cout << "\t original size: " << inBuf.size() << ", uncompressed size: " << decomp.size() << std::endl;
+        std::cout << inBuf << std::endl;
+        std::cout << decomp << std::endl;
+    }
+
+    std::cout << "compression ratio: " << float(sizeof(short) * inBuf.size()) / float((5 * sizeof(T) * outBuf.size()));
     return 1;
 }
 
@@ -488,133 +640,143 @@ Result run_trvl(InputFile &input_file, short change_threshold, int invalidation_
     {
         // if (0)
         // {
-            // compressing the frame by itself without RVL
-            // std::deque<short> abc(depth_buffer.begin(), depth_buffer.end());
-            // std::deque<Entry<short>> tmp1;
-            // compLZ77(abc, tmp1);
+        // compressing the frame by itself without RVL
+        // std::deque<short> abc(depth_buffer.begin(), depth_buffer.end());
+        // std::deque<Entry<short>> tmp1;
+        // compLZ77(abc, tmp1);
 
-            // do rvl then compress
+        // do rvl then compress
 
-            // rvl_frame = rvl::compress(depth_buffer.data(), frame_size);
-            
-            // for(int i = 0; i < 100; i++){
-            //     printf("%d\n",rvl_frame[i]);
-            // }
-            
-            // std::deque<char> def(rvl_frame.begin(), rvl_frame.end());
-            // std::deque<Entry<char>> tmp2;
-            // compLZ77(def, tmp2);
-            // frame_count++;
+        // rvl_frame = rvl::compress(depth_buffer.data(), frame_size);
+
+        // for(int i = 0; i < 100; i++){
+        //     printf("%d\n",rvl_frame[i]);
+        // }
+
+        // std::deque<char> def(rvl_frame.begin(), rvl_frame.end());
+        // std::deque<Entry<char>> tmp2;
+        // compLZ77(def, tmp2);
+        // frame_count++;
         // }
         // else
         // {
-            // std::vector<short> abc = {9, 13, 9, 13, 37, 13, 9, 13, 9, 13, 9, 9};
-            // std::vector<std::vector<short>> tmp;
-            // compLZ77(abc, tmp);
-            // for(int i = 1000; i < 1010; i++){
-            //     std::cout << depth_buffer[i] << " ";
-            // }
-            std::cout << frame_count << std::endl;
-            // input_file.input_stream().read(reinterpret_cast<char *>(depth_buffer.data()), depth_buffer_size);
-            // input_file.input_stream().read(pixel_diffs_char, depth_buffer_size);
-            Timer compression_timer;
-            // total_sum += depth_buffer.size();
-            // std::cout << depth_buffer.size() << std::endl;
-            // Update the TRVL pixel values with the raw depth pixels.
+        // std::vector<short> abc = {9, 13, 9, 13, 37, 13, 9, 13, 9, 13, 9, 9};
+        // std::vector<std::vector<short>> tmp;
+        // compLZ77(abc, tmp);
+        // for(int i = 1000; i < 1010; i++){
+        //     std::cout << depth_buffer[i] << " ";
+        // }
+        std::cout << frame_count << std::endl;
+        // input_file.input_stream().read(reinterpret_cast<char *>(depth_buffer.data()), depth_buffer_size);
+        // input_file.input_stream().read(pixel_diffs_char, depth_buffer_size);
+        Timer compression_timer;
+        // total_sum += depth_buffer.size();
+        // std::cout << depth_buffer.size() << std::endl;
+        // Update the TRVL pixel values with the raw depth pixels.
+        for (int i = 0; i < frame_size; ++i)
+        {
+            trvl::update_pixel(trvl_pixels[i], depth_buffer[i], change_threshold, invalidation_threshold);
+        }
+
+        // std::cout << "depth buffer\t" << depth_buffer_size << "\t";
+        // std::cout << "frame size \t" << frame_size << "\t";
+        // For the first frame, since there is no previous frame to diff, run vanilla RVL.
+        if (frame_count == 0)
+        {
             for (int i = 0; i < frame_size; ++i)
             {
-                trvl::update_pixel(trvl_pixels[i], depth_buffer[i], change_threshold, invalidation_threshold);
+                prev_pixel_values[i] = trvl_pixels[i].value;
             }
-
-            // std::cout << "depth buffer\t" << depth_buffer_size << "\t";
-            // std::cout << "frame size \t" << frame_size << "\t";
-            // For the first frame, since there is no previous frame to diff, run vanilla RVL.
-            if (frame_count == 0)
-            {
-                for (int i = 0; i < frame_size; ++i)
-                {
-                    prev_pixel_values[i] = trvl_pixels[i].value;
-                }
-                rvl_frame = rvl::compress(prev_pixel_values.data(), frame_size);
-                // std::cout << "trvl frame size \t" << rvl_frame.size() << "\t";
-                compression_time_sum += compression_timer.milliseconds();
-
-                Timer decompression_timer;
-                depth_image = rvl::decompress(rvl_frame.data(), frame_size);
-                // std::cout << "created depth image " << std::endl;
-                decompression_time_sum += decompression_timer.milliseconds();
-            }
-            else
-            {
-                // Calculate pixel_diffs using prev_pixel_values
-                // and save current pixel values to prev_pixel_values for the next frame.
-                for (int i = 0; i < frame_size; ++i)
-                {
-                    short value = trvl_pixels[i].value;
-                    pixel_diffs[i] = value - prev_pixel_values[i];
-                    // if (frame_count == 2)
-                    // {
-                    diff_output << pixel_diffs[i] << ",";
-                    // }
-                    // std::cout  << value << ",";
-                    // std::cout << value - prev_pixel_values[i] << " ";
-
-                    prev_pixel_values[i] = value;
-
-                    // if(pixel_diffs[i] != 0){
-                    //     std::cout << pixel_diffs[i] << " " ;
-                    // }
-                }
-                std::deque<char> def(pixel_diffs.begin(), pixel_diffs.end());
-                std::deque<Entry<char>> tmp2;
-                compLZ77(def, tmp2);
-                // std::cout << frame_count << std::endl;
-
-                // Compress and decompress the difference.
-
-                // rvl_frame = rvl::compress(pixel_diffs.data(), frame_size);
-                rvl_frame = rvl::compress(pixel_diffs.data(), frame_size);
-                compression_time_sum += compression_timer.milliseconds();
-
-                Timer decompression_timer;
-                auto diff_frame = rvl::decompress(rvl_frame.data(), frame_size);
-                // Update depth_image of the previous frame using the difference
-                // between the previous frame and the current frame.
-                for (int i = 0; i < frame_size; ++i)
-                {
-                    depth_image[i] += diff_frame[i];
-                }
-                decompression_time_sum += decompression_timer.milliseconds();
-
-                auto depth_mat2 = create_depth_mat(input_file.width(), input_file.height(), pixel_diffs.data());
-                char outPath2[1024 * 2] = {0};
-                sprintf(outPath2, "/home/sc/streamingPipeline/analysisData/trvl/%d_del.png", frame_count);
-                cv::imwrite(outPath2, depth_mat2);
-            }
-
-            auto depth_mat = create_depth_mat(input_file.width(), input_file.height(), depth_image.data());
-            char outPath[1024 * 2] = {0};
-            sprintf(outPath, "/home/sc/streamingPipeline/analysisData/trvl/%d_depth.png", frame_count);
-            cv::imwrite(outPath, depth_mat);
-            // cv::imshow("Depth", depth_mat);
-            // cv::imwrite(outPath, depth_mat);
-            // if (cv::waitKey(1) >= 0)
-            //     break;
-
-            compressed_size_sum += rvl_frame.size();
+            rvl_frame = rvl::compress(prev_pixel_values.data(), frame_size);
             // std::cout << "trvl frame size \t" << rvl_frame.size() << "\t";
-            // The first frame goes through vanilla RVL which is lossless.
-            float mse_value = mse(depth_buffer, depth_image);
-            // std::cout << mse_value << std::endl;
-            if (mse_value != 0.0f)
+            compression_time_sum += compression_timer.milliseconds();
+
+            Timer decompression_timer;
+            depth_image = rvl::decompress(rvl_frame.data(), frame_size);
+            // std::cout << "created depth image " << std::endl;
+            decompression_time_sum += decompression_timer.milliseconds();
+        }
+        else
+        {
+            // Calculate pixel_diffs using prev_pixel_values
+            // and save current pixel values to prev_pixel_values for the next frame.
+            for (int i = 0; i < frame_size; ++i)
             {
-                psnr_sum += 20.0f * log10(max(depth_buffer) / sqrt(mse_value));
+                short value = trvl_pixels[i].value;
+                pixel_diffs[i] = value - prev_pixel_values[i];
+                if (pixel_diffs[i] > 65535)
+                {
+                    std::cout << pixel_diffs[i] << std::endl;
+                }
+                // if (frame_count == 2)
+                // {
+                diff_output << pixel_diffs[i] << ",";
+                // }
+                // std::cout  << value << ",";
+                // std::cout << value - prev_pixel_values[i] << " ";
+
+                prev_pixel_values[i] = value;
+
+                // if(pixel_diffs[i] != 0){
+                //     std::cout << pixel_diffs[i] << " " ;
+                // }
             }
-            else
+            // std::deque<int> abc;
+            // std::deque<Entry<short>> abc;
+            // abc.push_back(Entry<short>(0,0,666666666));
+            // std::cout << abc.max_size() << std::endl;
+            // std::vector<short> tmpVec(pixel_diffs.begin(), pixel_diffs.end());
+            std::deque<short> def(pixel_diffs.begin(), pixel_diffs.end());
+            // std::cout << def.size() << std::endl;
+            std::deque<Entry<short>> tmp2;
+            compLZ77(def, tmp2);
+            // std::cout << frame_count << std::endl;
+
+            // Compress and decompress the difference.
+
+            // rvl_frame = rvl::compress(pixel_diffs.data(), frame_size);
+            rvl_frame = rvl::compress(pixel_diffs.data(), frame_size);
+            compression_time_sum += compression_timer.milliseconds();
+
+            Timer decompression_timer;
+            auto diff_frame = rvl::decompress(rvl_frame.data(), frame_size);
+            // Update depth_image of the previous frame using the difference
+            // between the previous frame and the current frame.
+            for (int i = 0; i < frame_size; ++i)
             {
-                ++zero_psnr_frame_count;
+                depth_image[i] += diff_frame[i];
             }
-            ++frame_count;
+            decompression_time_sum += decompression_timer.milliseconds();
+
+            auto depth_mat2 = create_depth_mat(input_file.width(), input_file.height(), pixel_diffs.data());
+            char outPath2[1024 * 2] = {0};
+            sprintf(outPath2, "/home/sc/streamingPipeline/analysisData/trvl/%d_del.png", frame_count);
+            cv::imwrite(outPath2, depth_mat2);
+        }
+
+        auto depth_mat = create_depth_mat(input_file.width(), input_file.height(), depth_image.data());
+        char outPath[1024 * 2] = {0};
+        sprintf(outPath, "/home/sc/streamingPipeline/analysisData/trvl/%d_depth.png", frame_count);
+        cv::imwrite(outPath, depth_mat);
+        // cv::imshow("Depth", depth_mat);
+        // cv::imwrite(outPath, depth_mat);
+        // if (cv::waitKey(1) >= 0)
+        //     break;
+
+        compressed_size_sum += rvl_frame.size();
+        // std::cout << "trvl frame size \t" << rvl_frame.size() << "\t";
+        // The first frame goes through vanilla RVL which is lossless.
+        float mse_value = mse(depth_buffer, depth_image);
+        // std::cout << mse_value << std::endl;
+        if (mse_value != 0.0f)
+        {
+            psnr_sum += 20.0f * log10(max(depth_buffer) / sqrt(mse_value));
+        }
+        else
+        {
+            ++zero_psnr_frame_count;
+        }
+        ++frame_count;
         // }
     }
     input_file.input_stream().close();
