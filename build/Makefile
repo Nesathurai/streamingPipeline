@@ -221,6 +221,19 @@ trvl/fast:
 .PHONY : trvl/fast
 
 #=============================================================================
+# Target rules for targets named trvlTest
+
+# Build rule for target.
+trvlTest: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 trvlTest
+.PHONY : trvlTest
+
+# fast build rule for target.
+trvlTest/fast:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/trvlTest.dir/build.make CMakeFiles/trvlTest.dir/build
+.PHONY : trvlTest/fast
+
+#=============================================================================
 # Target rules for targets named paper
 
 # Build rule for target.
@@ -605,6 +618,30 @@ src/trvl.cpp.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/trvl.dir/build.make CMakeFiles/trvl.dir/src/trvl.cpp.s
 .PHONY : src/trvl.cpp.s
 
+src/trvlTest.o: src/trvlTest.cpp.o
+.PHONY : src/trvlTest.o
+
+# target to build an object file
+src/trvlTest.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/trvlTest.dir/build.make CMakeFiles/trvlTest.dir/src/trvlTest.cpp.o
+.PHONY : src/trvlTest.cpp.o
+
+src/trvlTest.i: src/trvlTest.cpp.i
+.PHONY : src/trvlTest.i
+
+# target to preprocess a source file
+src/trvlTest.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/trvlTest.dir/build.make CMakeFiles/trvlTest.dir/src/trvlTest.cpp.i
+.PHONY : src/trvlTest.cpp.i
+
+src/trvlTest.s: src/trvlTest.cpp.s
+.PHONY : src/trvlTest.s
+
+# target to generate assembly for a file
+src/trvlTest.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/trvlTest.dir/build.make CMakeFiles/trvlTest.dir/src/trvlTest.cpp.s
+.PHONY : src/trvlTest.cpp.s
+
 src/util.o: src/util.cpp.o
 .PHONY : src/util.o
 
@@ -661,6 +698,7 @@ help:
 	@echo "... paper"
 	@echo "... reconstruction"
 	@echo "... trvl"
+	@echo "... trvlTest"
 	@echo "... src/camera_alignment.o"
 	@echo "... src/camera_alignment.i"
 	@echo "... src/camera_alignment.s"
@@ -700,6 +738,9 @@ help:
 	@echo "... src/trvl.o"
 	@echo "... src/trvl.i"
 	@echo "... src/trvl.s"
+	@echo "... src/trvlTest.o"
+	@echo "... src/trvlTest.i"
+	@echo "... src/trvlTest.s"
 	@echo "... src/util.o"
 	@echo "... src/util.i"
 	@echo "... src/util.s"

@@ -71,6 +71,7 @@ all: CMakeFiles/mergePC.dir/all
 all: CMakeFiles/mergeMesh.dir/all
 all: CMakeFiles/mergeBin.dir/all
 all: CMakeFiles/trvl.dir/all
+all: CMakeFiles/trvlTest.dir/all
 all: CMakeFiles/paper.dir/all
 .PHONY : all
 
@@ -87,6 +88,7 @@ clean: CMakeFiles/mergePC.dir/clean
 clean: CMakeFiles/mergeMesh.dir/clean
 clean: CMakeFiles/mergeBin.dir/clean
 clean: CMakeFiles/trvl.dir/clean
+clean: CMakeFiles/trvlTest.dir/clean
 clean: CMakeFiles/paper.dir/clean
 .PHONY : clean
 
@@ -297,6 +299,32 @@ trvl: CMakeFiles/trvl.dir/rule
 CMakeFiles/trvl.dir/clean:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/trvl.dir/build.make CMakeFiles/trvl.dir/clean
 .PHONY : CMakeFiles/trvl.dir/clean
+
+#=============================================================================
+# Target rules for target CMakeFiles/trvlTest.dir
+
+# All Build rule for target.
+CMakeFiles/trvlTest.dir/all:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/trvlTest.dir/build.make CMakeFiles/trvlTest.dir/depend
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/trvlTest.dir/build.make CMakeFiles/trvlTest.dir/build
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/home/sc/streamingPipeline/build/CMakeFiles --progress-num=49,50 "Built target trvlTest"
+.PHONY : CMakeFiles/trvlTest.dir/all
+
+# Build rule for subdir invocation for target.
+CMakeFiles/trvlTest.dir/rule: cmake_check_build_system
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/sc/streamingPipeline/build/CMakeFiles 2
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 CMakeFiles/trvlTest.dir/all
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/sc/streamingPipeline/build/CMakeFiles 0
+.PHONY : CMakeFiles/trvlTest.dir/rule
+
+# Convenience name for target.
+trvlTest: CMakeFiles/trvlTest.dir/rule
+.PHONY : trvlTest
+
+# clean rule for target.
+CMakeFiles/trvlTest.dir/clean:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/trvlTest.dir/build.make CMakeFiles/trvlTest.dir/clean
+.PHONY : CMakeFiles/trvlTest.dir/clean
 
 #=============================================================================
 # Target rules for target CMakeFiles/paper.dir

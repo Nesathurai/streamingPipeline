@@ -6,6 +6,7 @@
 /home/sc/streamingPipeline/build/CMakeFiles/mergeMesh.dir
 /home/sc/streamingPipeline/build/CMakeFiles/mergeBin.dir
 /home/sc/streamingPipeline/build/CMakeFiles/trvl.dir
+/home/sc/streamingPipeline/build/CMakeFiles/trvlTest.dir
 /home/sc/streamingPipeline/build/CMakeFiles/paper.dir
 /home/sc/streamingPipeline/build/CMakeFiles/edit_cache.dir
 /home/sc/streamingPipeline/build/CMakeFiles/rebuild_cache.dir

@@ -159,6 +159,18 @@ target_link_libraries(trvl
 #  CXX_STANDARD 14
 #)
 
+add_executable(trvlTest
+  include/rvl.h
+  include/trvl.h
+  src/trvlTest.cpp
+)
+target_link_libraries(trvlTest
+  ${OpenCV_LIBS}
+)
+#set_target_properties(trvlTest PROPERTIES
+#  CXX_STANDARD 14
+#)
+
 
 add_executable(paper
   include/rvl.h

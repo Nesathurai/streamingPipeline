@@ -247,6 +247,8 @@ int main(int argc, char **argv)
         std::cout << outPath << std::endl;
         cv::imwrite(outPath, tmp);
 
+        std::cout << cv::sum(tmp) << std::endl;
+
         frameOut.write(reinterpret_cast<char *>(frameBufferOut), frameSizeOut * sizeof(uint16_t));
         frameOut.close();
 

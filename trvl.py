@@ -31,6 +31,7 @@ os.system('clear && cd {:}/build && make'.format(rootPath))
 
 # run rvl once, and overwrite file 
 cmd = 'cd {:}/build && ./trvl {:}/ allDepthBin {:} {:} 0 0'.format(rootPath, refPath, 0, 0)
+
 # cmd = 'cd {:}/build && ./trvl /home/sc/streamingPipeline/analysisData/temporal-rvl-data/ ppt2-sitting {:} {:} 0 0'.format(rootPath, 0, 0)
 # cmd = 'cd {:}/build && ./trvl /home/sc/streamingPipeline/analysisData/ref/ frame_93_camera_0_depthBin {:} {:} 0 0'.format(rootPath, 0, 0)
 print(cmd)
@@ -38,7 +39,8 @@ os.system(cmd)
 
 for ct in CHANGE_THRESHOLD:
     for it in INVALIDATION_THRESHOLD:
-        cmd = 'cd {:}/build && ./trvl {:}/ allDepthBin {:} {:} 1 1'.format(rootPath, refPath, ct, it)
+        # cmd = 'cd {:}/build && ./trvl {:}/ allDepthBin {:} {:} 1 1'.format(rootPath, refPath, ct, it)
+        cmd = 'cd {:}/build && ./trvl /home/sc/streamingPipeline/analysisData/temporal-rvl-data/ ppt2-sitting {:} {:} 1 1'.format(rootPath, ct, it)
         # cmd = 'cd {:}/build && ./trvl {:}/analysisData/temporal-rvl-data/ allDepthBin {:} {:} 1 1'.format(rootPath, rootPath, ct, it)
         # cmd = 'cd {:}/build && ./trvl /home/sc/streamingPipeline/analysisData/ref/ frame_93_camera_0_depthBin {:} {:} 1 1'.format(rootPath, ct, it)
         # cmd = 'cd {:}/build && ./trvl /home/sc/streamingPipeline/analysisData/temporal-rvl-data/ ppt2-sitting {:} {:} 1 1'.format(rootPath, 0, 0)

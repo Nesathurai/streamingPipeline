@@ -81,8 +81,8 @@ def main():
     app.run()
     # post_to_main_thread(time.sleep(1))
     post_to_main_thread(tests(window))
-    # screenshot(window)
-    # print("screenshot taken")
+    screenshot(window)
+    print("screenshot taken")
 
     
 
