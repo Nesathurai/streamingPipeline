@@ -366,6 +366,6 @@ CMakeFiles/trvlTest.dir/src/trvlTest.cpp.o: \
  /usr/include/opencv4/opencv2/imgproc/types_c.h \
  /usr/include/opencv4/opencv2/core/core_c.h \
  /usr/include/opencv4/opencv2/core/types_c.h /usr/include/c++/11/iterator \
- /usr/include/c++/11/bits/stream_iterator.h \
+ /usr/include/c++/11/bits/stream_iterator.h /usr/include/c++/11/bitset \
  /home/sc/streamingPipeline/include/trvl.h \
  /home/sc/streamingPipeline/include/rvl.h

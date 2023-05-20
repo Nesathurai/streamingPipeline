@@ -6,6 +6,7 @@
 #include <algorithm> // for copy
 #include <iterator>  // for ostream_iterator
 #include <deque>
+#include <bitset>
 #include "trvl.h"
 
 short CHANGE_THRESHOLD = 10;
@@ -281,6 +282,61 @@ std::ostream &operator<<(std::ostream &os, const Entry<T> &entry)
 }
 
 template <typename T>
+int toZigZag(T inVal)
+{
+    // for ints
+    return (inVal << 1) ^ (inVal >> 31);
+}
+
+template <typename T>
+int fromZigZag(T inVal)
+{
+    // for ints
+    return (inVal >> 1) ^ -(inVal & 1);
+}
+
+void EncodeVLE(int value, std::deque<int> &pBuffer, int &word, int &nibblesWritten)
+{
+    do
+    {
+        int nibble = value & 0x7; // lower 3 bits
+        if (value >>= 3)
+            nibble |= 0x8; // more to come
+        word <<= 4;
+        word |= nibble;
+        if (++nibblesWritten == 8)
+        { // output word
+            // *pBuffer++ = word;
+            pBuffer.push_back(word);
+            nibblesWritten = 0;
+            word = 0;
+        }
+    } while (value);
+}
+
+int DecodeVLE(std::deque<int> &pBuffer, int &word, int &nibblesWritten)
+{
+    unsigned int nibble;
+    int value = 0, bits = 29;
+    do
+    {
+        if (!nibblesWritten)
+        {
+            word = pBuffer.front();
+            pBuffer.pop_front();
+            // word = *pBuffer++; // load word
+            nibblesWritten = 8;
+        }
+        nibble = word & 0xf0000000;
+        value |= (nibble << 1) >> bits;
+        word <<= 4;
+        nibblesWritten--;
+        bits -= 3;
+    } while (nibble & 0x80000000);
+    return value;
+}
+
+template <typename T>
 Entry<T> getLargestSubvec(typename std::deque<T>::const_iterator searchL, typename std::deque<T>::const_iterator searchR, typename std::deque<T>::const_iterator lookL, typename std::deque<T>::const_iterator lookR, typename std::deque<T>::const_iterator end)
 {
     // std::cout << "search buffer: " << searchBuffer << std::endl;
@@ -420,7 +476,7 @@ int compLZ77(const std::deque<T> &inBuf, std::deque<Entry<T>> &outBuf)
 {
     // reference: https://en.wikipedia.org/wiki/LZ77_and_LZ78#Pseudocode
     int searchWindow = 1000;
-    int lookWindow = 10;
+    int lookWindow = 25;
     int count = 0;
 
     if (searchWindow > inBuf.size())
@@ -439,7 +495,7 @@ int compLZ77(const std::deque<T> &inBuf, std::deque<Entry<T>> &outBuf)
     typename std::deque<T>::const_iterator lookL = inBuf.begin();
     typename std::deque<T>::const_iterator lookR = inBuf.begin() + lookWindow;
     typename std::deque<T>::const_iterator end = inBuf.end();
-    typename std::deque<T>::const_iterator searchL; 
+    typename std::deque<T>::const_iterator searchL;
     typename std::deque<T>::const_iterator searchR;
 
     while (lookL != lookR)
@@ -538,6 +594,108 @@ int compLZ77(const std::deque<T> &inBuf, std::deque<Entry<T>> &outBuf)
     return 1;
 }
 
+template <typename T>
+int compressLZRVL(std::deque<T> &difDeque, char *output, int numPixels)
+{
+    // compress with zero runs and LZ77
+    // std::deque<short> difDeque(pixel_diffs.begin(), pixel_diffs.end());
+    std::deque<Entry<T>> compressed;
+    compLZ77(difDeque, compressed);
+    // compression_time_sum += compression_timer.milliseconds();
+
+    // serialize data -> // 3 control bits + 4 shorts (8 bytes)
+    
+    int originalSize = sizeof(T) * difDeque.size();
+    std::deque<int> pBuffer;
+    // int *pBuffer = (int *)output;
+    int word = 0;
+    int nibblesWritten = 0;
+    // std::deque<T> serialized;
+    int count = 0;
+    while (compressed.begin() != compressed.end())
+    {
+        Entry<T> entry = compressed.front();
+        // 3 control = zeros subvec char
+        // control will never be negative, so no need for zig zag
+        T control = (entry.z_ << 2) + (entry.sv_ << 1) + (entry.c_);
+        // std::cout << control << std::endl;
+
+        if (entry.z_)
+        {
+            EncodeVLE(toZigZag(entry.z), pBuffer, word, nibblesWritten); // run of zeros
+            // EncodeVLE(int(entry.z), pBuffer, word, nibblesWritten); // run of zeros
+        }
+        if(entry.sv_){
+            
+            EncodeVLE(toZigZag(entry.d), pBuffer, word, nibblesWritten); // distance
+            EncodeVLE(toZigZag(entry.l), pBuffer, word, nibblesWritten); // length
+            // EncodeVLE(int(entry.d), pBuffer, word, nibblesWritten); // distance
+            // EncodeVLE(int(entry.l), pBuffer, word, nibblesWritten); // length
+        }
+        if(entry.c_){
+            
+            EncodeVLE(toZigZag(entry.c), pBuffer, word, nibblesWritten); // char
+            // EncodeVLE(int(entry.c), pBuffer, word, nibblesWritten); // char
+        }
+        if(count == 0){
+            // std::cout << entry.z_ << entry.sv_ << entry.c_ << std::endl;
+            // std::cout << std::bitset<3>(control) << std::endl;
+            std::cout << toZigZag(entry.z) << std::endl;
+            std::cout << DecodeVLE(pBuffer, word, nibblesWritten) << std::endl;
+        }
+        compressed.pop_front();
+        count++;
+    }
+    // pBuffer now contains all serialized data 
+    // now transfer serialized data to chars
+
+
+    // std::deque<short> decomp;
+    // Timer decompression_timer;
+    // decompLZ77<short>(compressed, decomp);
+    // decompression_time_sum += decompression_timer.milliseconds();
+
+    // int pass = check(difDeque, decomp);
+
+    // if (!pass)
+    // {
+    //     std::cout << "pass: " << pass << std::endl;
+    //     std::cout << "\t original size: " << difDeque.size() << ", uncompressed size: " << decomp.size() << std::endl;
+    //     assert(pass == 1);
+    //     // std::cout << inBuf << std::endl;
+    //     // std::cout << decomp << std::endl;
+    // }
+
+    // int *buffer = (int *)output;
+    // int *pBuffer = (int *)output;
+    // int word = 0;
+    // int nibblesWritten = 0;
+    // short *end = input + numPixels;
+    // short previous = 0;
+    // while (input != end)
+    // {
+    //     int zeros = 0, nonzeros = 0;
+    //     for (; (input != end) && !*input; input++, zeros++);
+    //     EncodeVLE(zeros, pBuffer, word, nibblesWritten); // number of zeros
+    //     for (short *p = input; (p != end) && *p++; nonzeros++);
+    //     EncodeVLE(nonzeros, pBuffer, word, nibblesWritten); // number of nonzeros
+    //     for (int i = 0; i < nonzeros; i++)
+    //     {
+    //         short current = *input++;
+    //         int delta = current - previous;
+    //         int positive = (delta << 1) ^ (delta >> 31);
+    //         EncodeVLE(positive, pBuffer, word, nibblesWritten); // nonzero value
+    //         previous = current;
+    //     }
+    // }
+
+    // if (nibblesWritten) // last few values
+    //     *pBuffer++ = word << 4 * (8 - nibblesWritten);
+
+    // return int((char *)pBuffer - (char *)buffer); // num bytes
+    return 0;
+}
+
 Result run_trvl(InputFile &input_file, short change_threshold, int invalidation_threshold)
 {
     int frame_size = input_file.width() * input_file.height();
@@ -559,6 +717,8 @@ Result run_trvl(InputFile &input_file, short change_threshold, int invalidation_
     std::vector<char> rvl_frame;
     // For the decompressed frame.
     std::vector<short> depth_image;
+
+    std::deque<short> all_depth_buffer(frame_size);
 
     float compression_time_sum = 0.0f;
     float decompression_time_sum = 0.0f;
@@ -601,7 +761,7 @@ Result run_trvl(InputFile &input_file, short change_threshold, int invalidation_
         // std::cout << "depth buffer\t" << depth_buffer_size << "\t";
         // std::cout << "frame size \t" << frame_size << "\t";
         // For the first frame, since there is no previous frame to diff, run vanilla RVL.
-        // TODO: clean this up? Not my code, don't want to screw up 
+        // TODO: clean this up? Not my code, don't want to screw up
         if (frame_count == 0)
         {
             for (int i = 0; i < frame_size; ++i)
@@ -629,31 +789,37 @@ Result run_trvl(InputFile &input_file, short change_threshold, int invalidation_
                 prev_pixel_values[i] = value;
             }
 
+            // TODO: speed up this interface -> skip converting to deque
             // the encoding LZRVL
-            // Compress and decompress the difference.
+            // Compress the difference.
             std::deque<short> difDeque(pixel_diffs.begin(), pixel_diffs.end());
-            std::deque<Entry<short>> compressed;
-            compLZ77(difDeque, compressed);
+            std::vector<char> output(5*frame_size);
+            compressLZRVL(difDeque, output.data(), frame_size);
             compression_time_sum += compression_timer.milliseconds();
 
-            std::deque<short> decomp;
-            Timer decompression_timer;
-            decompLZ77<short>(compressed, decomp);
-            decompression_time_sum += decompression_timer.milliseconds();
-            
-            int pass = check(difDeque, decomp);
-            
-            if (!pass)
-            {
-                std::cout << "pass: " << pass << std::endl;
-                std::cout << "\t original size: " << difDeque.size() << ", uncompressed size: " << decomp.size() << std::endl;
-                assert(pass == 1);
-                // std::cout << inBuf << std::endl;
-                // std::cout << decomp << std::endl;
-            }
-            // compressed size - using *5 since there are 4 T sized values, plus 3 bits so being conservative 
-            compressed_size_sum += float((5 * sizeof(short) * compressed.size()));
-            
+            // output.resize(size);
+            // output.shrink_to_fit();
+
+            // std::deque<short> decomp;
+            // Timer decompression_timer;
+            // decompLZ77<short>(compressed, decomp);
+            // decompression_time_sum += decompression_timer.milliseconds();
+
+            // int pass = check(difDeque, decomp);
+
+            // if (!pass)
+            // {
+            //     std::cout << "pass: " << pass << std::endl;
+            //     std::cout << "\t original size: " << difDeque.size() << ", uncompressed size: " << decomp.size() << std::endl;
+            //     assert(pass == 1);
+            //     // std::cout << inBuf << std::endl;
+            //     // std::cout << decomp << std::endl;
+            // }
+            // compressed size - using *5 since there are 4 T sized values, plus 3 bits so being conservative
+            // compressed_size_sum += float((5 * sizeof(short) * compressed.size()));
+
+            // all_depth_buffer.insert(all_depth_buffer.end(), pixel_diffs.begin(), pixel_diffs.end());
+
             // auto depth_mat2 = create_depth_mat(input_file.width(), input_file.height(), pixel_diffs.data());
             // char outPath2[1024 * 2] = {0};
             // sprintf(outPath2, "/home/sc/streamingPipeline/analysisData/trvl/%d_del.png", frame_count);
@@ -663,9 +829,33 @@ Result run_trvl(InputFile &input_file, short change_threshold, int invalidation_
         // auto depth_mat = create_depth_mat(input_file.width(), input_file.height(), depth_image.data());
         // char outPath[1024 * 2] = {0};
         // sprintf(outPath, "/home/sc/streamingPipeline/analysisData/trvl/%d_depth.png", frame_count);
-        // cv::imwrite(outPath, depth_mat);       
+        // cv::imwrite(outPath, depth_mat);
         ++frame_count;
     }
+    // // the encoding LZRVL
+    // // Compress and decompress the difference.
+    // std::deque<Entry<short>> compressed;
+    // compLZ77(all_depth_buffer, compressed);
+    // // compression_time_sum += compression_timer.milliseconds();
+
+    // std::deque<short> decomp;
+    // Timer decompression_timer;
+    // decompLZ77<short>(compressed, decomp);
+    // // decompression_time_sum += decompression_timer.milliseconds();
+
+    // int pass = check(all_depth_buffer, decomp);
+
+    // if (!pass)
+    // {
+    //     std::cout << "pass: " << pass << std::endl;
+    //     std::cout << "\t original size: " << all_depth_buffer.size() << ", uncompressed size: " << decomp.size() << std::endl;
+    //     assert(pass == 1);
+    //     // std::cout << inBuf << std::endl;
+    //     // std::cout << decomp << std::endl;
+    // }
+    // // compressed size - using *5 since there are 4 T sized values, plus 3 bits so being conservative
+    // compressed_size_sum += float((5 * sizeof(short) * compressed.size()));
+
     input_file.input_stream().close();
     diff_output.close();
     // std::cout << total_sum << std::endl;

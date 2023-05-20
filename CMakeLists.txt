@@ -175,6 +175,7 @@ target_link_libraries(trvlTest
 #)
 target_compile_options(trvlTest PUBLIC
   "-O3"
+  "-ggdb"
   #"-lstdc++"
   )
 

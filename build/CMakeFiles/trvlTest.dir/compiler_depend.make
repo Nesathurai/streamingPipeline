@@ -436,11 +436,14 @@ CMakeFiles/trvlTest.dir/src/trvlTest.cpp.o: ../src/trvlTest.cpp \
   /usr/include/opencv4/opencv2/core/types_c.h \
   /usr/include/c++/11/iterator \
   /usr/include/c++/11/bits/stream_iterator.h \
+  /usr/include/c++/11/bitset \
   ../include/trvl.h \
   ../include/rvl.h
 
 
 ../include/rvl.h:
+
+/usr/include/c++/11/bitset:
 
 /usr/include/c++/11/bits/stream_iterator.h:
 
