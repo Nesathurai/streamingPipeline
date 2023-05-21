@@ -7,6 +7,7 @@
 #include <iterator>  // for ostream_iterator
 #include <deque>
 #include <bitset>
+#include <math.h>
 #include "trvl.h"
 
 short CHANGE_THRESHOLD = 10;
@@ -295,26 +296,39 @@ int fromZigZag(T inVal)
     return (inVal >> 1) ^ -(inVal & 1);
 }
 
-void EncodeVLE(int value, std::deque<int> &pBuffer, int &word, int &nibblesWritten)
+// void encodeVLE(int &){
+//     // assume that the control (size of char, 1 byte) already coded
+// };
+
+void EncodeVLE(int value, typename std::deque<int> &pBuffer, int &word, int &nibblesWritten)
 {
     do
     {
         int nibble = value & 0x7; // lower 3 bits
+        // std::cout << "nib: " << std::bitset<32>(nibble) << std::endl;
+        // std::cout << "word0: " << std::bitset<32>(nibble) << std::endl;
         if (value >>= 3)
             nibble |= 0x8; // more to come
         word <<= 4;
+        // std::cout << "word1: " << std::bitset<32>(nibble) << std::endl;
         word |= nibble;
+        // std::cout << "word2: " << std::bitset<32>(nibble) << std::endl;
+        // std::cout << "nibs written: " <<  nibblesWritten << std::endl;
         if (++nibblesWritten == 8)
         { // output word
-            // *pBuffer++ = word;
             pBuffer.push_back(word);
+            // pBuffer++;
+            // *pBuffer++ = word;
+            // std::cout << "word3: " << std::bitset<32>(word) << std::endl;
+            // pBuffer.push_back(word);
+
             nibblesWritten = 0;
             word = 0;
         }
     } while (value);
 }
 
-int DecodeVLE(std::deque<int> &pBuffer, int &word, int &nibblesWritten)
+int DecodeVLE(typename std::deque<int> &pBuffer, int &word, int &nibblesWritten)
 {
     unsigned int nibble;
     int value = 0, bits = 29;
@@ -322,8 +336,8 @@ int DecodeVLE(std::deque<int> &pBuffer, int &word, int &nibblesWritten)
     {
         if (!nibblesWritten)
         {
-            word = pBuffer.front();
             pBuffer.pop_front();
+            word = pBuffer.front();
             // word = *pBuffer++; // load word
             nibblesWritten = 8;
         }
@@ -594,6 +608,18 @@ int compLZ77(const std::deque<T> &inBuf, std::deque<Entry<T>> &outBuf)
     return 1;
 }
 
+int bitSize(int val)
+{
+    if (val == 0)
+    {
+        return 0; // empty value will not be saved
+    }
+    else
+    {
+        return int(ceil(log2(val) / 3) * 4);
+    }
+}
+
 template <typename T>
 int compressLZRVL(std::deque<T> &difDeque, char *output, int numPixels)
 {
@@ -604,51 +630,124 @@ int compressLZRVL(std::deque<T> &difDeque, char *output, int numPixels)
     // compression_time_sum += compression_timer.milliseconds();
 
     // serialize data -> // 3 control bits + 4 shorts (8 bytes)
-    
+
     int originalSize = sizeof(T) * difDeque.size();
+    // std::cout << "size buf: " << buffer.size() << " max: " << buffer.max_size() << std::endl;
     std::deque<int> pBuffer;
     // int *pBuffer = (int *)output;
     int word = 0;
     int nibblesWritten = 0;
     // std::deque<T> serialized;
     int count = 0;
+    int bitsNeeded = 0;
+    // std::bitset<4> bits{"0011"};
+    long bits = 0;
     while (compressed.begin() != compressed.end())
     {
+
+        // 2^16 * 2 -> ceil(17/3)*4 = 6*4 = 24 bits = 3 bytes at most
+        // 4 * 3 bytes = 12 bytes = 4 ints * 3 + 3 bits
         Entry<T> entry = compressed.front();
         // 3 control = zeros subvec char
         // control will never be negative, so no need for zig zag
-        T control = (entry.z_ << 2) + (entry.sv_ << 1) + (entry.c_);
+        char control = (entry.z_ << 2) + (entry.sv_ << 1) + (entry.c_);
         // std::cout << control << std::endl;
+
+        // if (count == 0)
+        // {
+        //     std::cout << std::bitset<16>(42) << std::endl;
+        //     EncodeVLE(toZigZag(42), pBuffer, word, nibblesWritten);
+        //     EncodeVLE(toZigZag(42), pBuffer, word, nibblesWritten);
+        //     EncodeVLE(toZigZag(42), pBuffer, word, nibblesWritten);
+        //     EncodeVLE(toZigZag(42), pBuffer, word, nibblesWritten);
+        //     // std::cout << pBuffer[0] << std::endl;
+        //     // std::cout << pBuffer[1] << std::endl;
+        //     // std::cout << std::bitset<32>(pBuffer[0]) << std::endl;
+        //     // std::cout << std::bitset<32>(pBuffer[1]) << std::endl;
+        //     // std::cout << std::bitset<32>(DecodeVLE(pBuffer, word, nibblesWritten)) << std::endl;
+        //     // std::cout << std::bitset<32>(DecodeVLE(pBuffer, word, nibblesWritten)) << std::endl;
+        //     if (nibblesWritten)
+        //     { // last few values
+        //         pBuffer.push_back(word << 4 * (8 - nibblesWritten));
+        //     }
+        //     std::cout << std::bitset<32>(pBuffer[0]) << std::endl;
+        // }
 
         if (entry.z_)
         {
             EncodeVLE(toZigZag(entry.z), pBuffer, word, nibblesWritten); // run of zeros
+            if(count == 0){
+                std::cout << entry.z << "->" << toZigZag(entry.z) << "->" << bitSize(toZigZag(entry.z)) << std::endl;
+            }
+            bitsNeeded += bitSize(toZigZag(entry.z));
             // EncodeVLE(int(entry.z), pBuffer, word, nibblesWritten); // run of zeros
         }
-        if(entry.sv_){
-            
+        if (entry.sv_)
+        {
+
             EncodeVLE(toZigZag(entry.d), pBuffer, word, nibblesWritten); // distance
             EncodeVLE(toZigZag(entry.l), pBuffer, word, nibblesWritten); // length
+            if(count == 0){
+                std::cout << entry.d << "->" << toZigZag(entry.d) << "->" << bitSize(toZigZag(entry.d)) << std::endl;
+                std::cout << entry.l << "->" << toZigZag(entry.l) << "->" << bitSize(toZigZag(entry.l)) << std::endl;
+            }
+            bitsNeeded += bitSize(toZigZag(entry.d));
+            bitsNeeded += bitSize(toZigZag(entry.l));
             // EncodeVLE(int(entry.d), pBuffer, word, nibblesWritten); // distance
             // EncodeVLE(int(entry.l), pBuffer, word, nibblesWritten); // length
         }
-        if(entry.c_){
-            
+        if (entry.c_)
+        {
+            // the character (delta) can be between -2^16/2 to 2^16/2
             EncodeVLE(toZigZag(entry.c), pBuffer, word, nibblesWritten); // char
+            if(count == 0){
+                std::cout << entry.c << "->" << toZigZag(entry.c) << "->" << bitSize(toZigZag(entry.c)) << std::endl;
+            }
+            bitsNeeded += bitSize(toZigZag(entry.c));
             // EncodeVLE(int(entry.c), pBuffer, word, nibblesWritten); // char
         }
-        if(count == 0){
+        if (nibblesWritten)
+        { // last few values
+            pBuffer.push_back(word << 4 * (8 - nibblesWritten));
+            // *pBuffer++ = word << 4 * (8 - nibblesWritten);
+        }
+        if(bitsNeeded > 32){
+            std::cout << "bits needed: (+4) " << bitsNeeded << " > 32 -> very BAD" << std::endl;
+        }
+        if (count == 0)
+        {
+            // std::cout << "bits needed: (+4) " << bitsNeeded << std::endl;
             // std::cout << entry.z_ << entry.sv_ << entry.c_ << std::endl;
             // std::cout << std::bitset<3>(control) << std::endl;
-            std::cout << toZigZag(entry.z) << std::endl;
-            std::cout << DecodeVLE(pBuffer, word, nibblesWritten) << std::endl;
+            // std::cout << entry.z << "->" << toZigZag(entry.z) << "->" << bitSize(toZigZag(entry.z)) << std::endl;
+            // std::cout << entry.d << "->" << toZigZag(entry.d) << "->" << bitSize(toZigZag(entry.d)) << std::endl;
+            // std::cout << entry.l << "->" << toZigZag(entry.l) << "->" << bitSize(toZigZag(entry.l)) << std::endl;
+            // std::cout << entry.c << "->" << toZigZag(entry.c) << "->" << bitSize(toZigZag(entry.c)) << std::endl;
+            // std::cout << std::bitset<32>(pBuffer[0]) << std::endl;
+            // std::cout << std::bitset<32>(pBuffer[1]) << std::endl;
+            // while(pBuffer != buffer.end()){
+            // if(*pBuffer != 0){
+            //     std::cout << fromZigZag(DecodeVLE(pBuffer, word, nibblesWritten)) << std::endl;
+            // }
+            // pBuffer++;
+            // }
+            // std::cout << "buff size: " << pBuffer.size() << std::endl;
+            // std::cout << fromZigZag(DecodeVLE(pBuffer, word, nibblesWritten)) << std::endl;
+            // std::cout << fromZigZag(DecodeVLE(pBuffer, word, nibblesWritten)) << std::endl;
+            // std::cout << fromZigZag(DecodeVLE(pBuffer, word, nibblesWritten)) << std::endl;
+            // std::cout << fromZigZag(DecodeVLE(pBuffer, word, nibblesWritten)) << std::endl;
+            // std::cout << fromZigZag(DecodeVLE(pBuffer, word, nibblesWritten)) << std::endl;
+            // std::cout << std::bitset<16>(DecodeVLE(pBuffer, word, nibblesWritten)) << std::endl;
+            // std::cout << std::bitset<16>(DecodeVLE(pBuffer, word, nibblesWritten)) << std::endl;
+            // std::cout << DecodeVLE(pBuffer, word, nibblesWritten) << std::endl;
+            // std::cout << DecodeVLE(pBuffer, word, nibblesWritten) << std::endl;
+            // std::cout << DecodeVLE(pBuffer, word, nibblesWritten) << std::endl;
         }
         compressed.pop_front();
         count++;
     }
-    // pBuffer now contains all serialized data 
+    // pBuffer now contains all serialized data
     // now transfer serialized data to chars
-
 
     // std::deque<short> decomp;
     // Timer decompression_timer;
@@ -784,6 +883,7 @@ Result run_trvl(InputFile &input_file, short change_threshold, int invalidation_
             for (int i = 0; i < frame_size; ++i)
             {
                 short value = trvl_pixels[i].value;
+                // TODO: unlikely that there is an overflow, but possible?
                 pixel_diffs[i] = value - prev_pixel_values[i];
                 diff_output << pixel_diffs[i] << ",";
                 prev_pixel_values[i] = value;
@@ -793,7 +893,7 @@ Result run_trvl(InputFile &input_file, short change_threshold, int invalidation_
             // the encoding LZRVL
             // Compress the difference.
             std::deque<short> difDeque(pixel_diffs.begin(), pixel_diffs.end());
-            std::vector<char> output(5*frame_size);
+            std::vector<char> output(5 * frame_size);
             compressLZRVL(difDeque, output.data(), frame_size);
             compression_time_sum += compression_timer.milliseconds();
 
