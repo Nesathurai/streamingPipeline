@@ -37,6 +37,15 @@ std::ostream &operator<<(std::ostream &os, const std::deque<T> &v)
     return os;
 }
 
+std::ostream &operator<<(std::ostream &os, const std::vector<bool> &v)
+{
+    for (int i = 0; i < v.size(); ++i)
+    {
+        os << v.at(i);
+    }
+    return os;
+}
+
 class InputFile
 {
 public:
@@ -538,10 +547,11 @@ int compLZ77(const std::deque<T> &inBuf, std::deque<Entry<T>> &outBuf)
             // std::cout << "loop " << std::endl;
             if ((lookL != lookR) && (lookL != inBuf.end()) && (lookR != inBuf.end()))
             {
-                if (zeros == SHRT_MAX)
+                if (zeros == SHRT_MAX / 2 - 1)
                 {
                     // only zeros case
                     outBuf.push_back(Entry<T>(true, zeros));
+                    // std::cout << "overflow: " << zeros << std::endl;
                     // totalZeros += zeros;
                     zeros = 0;
                 }
@@ -556,7 +566,7 @@ int compLZ77(const std::deque<T> &inBuf, std::deque<Entry<T>> &outBuf)
         }
 
         // std::cout << zeros << std::endl;
-        if ((zeros >= SHRT_MAX) || (zeros < 0))
+        if ((zeros >= SHRT_MAX/2-1) || (zeros < 0))
         {
             std::cout << "zeros invalid: " << zeros << " -> BAD" << std::endl;
         }
@@ -564,6 +574,8 @@ int compLZ77(const std::deque<T> &inBuf, std::deque<Entry<T>> &outBuf)
         // totalZeros += zeros;
 
         Entry<T> entry = getLargestSubvec<T>(searchL, searchR, lookL, lookR, end);
+        // std::cout << "zeros: " << zeros << std::endl;
+        assert(zeros != SHRT_MAX);
         if (zeros > 0)
         {
             entry.z_ = true;
@@ -616,12 +628,280 @@ int bitSize(int val)
     }
     else
     {
-        return int(ceil(log2(val) / 3) * 4);
+        // return int(ceil(log2(val) / 3) * 4);
+        return int(ceil(log2(val)));
     }
 }
 
+int toBits(std::deque<int> &output, int &buffer, int &bitsWritten, int input, int bitsToWrite)
+{
+    // take in the input
+    // shift everything to the left
+    // if 32 bits written, push to deque
+
+    // 1 continuation bit + 3 bits of data
+    int count = 0;
+    // check
+    while (bitsToWrite > 3)
+    {
+        if (bitsWritten == 32)
+        {
+            // save buffer
+            output.push_back(buffer);
+            // clear buffer
+            buffer = 0;
+            // reset bits written
+            bitsWritten = 0;
+        }
+        else if (bitsWritten > 32)
+        {
+            std::cout << "bits written > 32: " << bitsWritten << " -> very bad" << std::endl;
+        }
+
+        // get lsb bits on right
+        buffer <<= 4;
+        // clear bottom 4 bits
+        buffer = (buffer & 0xfffffff0);
+        if (count != 0)
+        {
+            buffer += 0x8;
+        };
+        buffer += (input & 0x7);
+        bitsToWrite -= 3;
+        bitsWritten += 4;
+        input >>= 3;
+        count++;
+    }
+    if (bitsWritten == 32)
+    {
+        // save buffer
+        output.push_back(buffer);
+        // clear buffer
+        buffer = 0;
+        // reset bits written
+        bitsWritten = 0;
+    }
+    else if (bitsWritten > 32)
+    {
+        std::cout << "bits written > 32: " << bitsWritten << " -> very bad" << std::endl;
+    }
+    // write last chunk
+    buffer <<= 4;
+    buffer += 0x8;
+    buffer += (input & 0x7);
+    bitsToWrite -= 3;
+    bitsWritten += 4;
+    std::cout << std::bitset<32>(buffer) << std::endl;
+    return 0;
+}
+
+int toSerial(std::vector<bool> &serial, char input)
+{
+    // only works for control bits -> 0xxx
+    // take in the input
+    // shift everything to the left
+    // write everything to a stream
+    // std::vector<bool> in = {0};
+    std::vector<bool> in;
+    in.reserve(4);
+    std::vector<bool>::const_iterator itr = in.begin();
+    // std::vector<bool>::const_iterator itr = serial.begin();
+
+    for (int i = 0; i < 4; ++i)
+    {
+        // std::cout << "cntr : " << ((input & 0xf) & (1 << i)) << std::endl;
+        // in.push_back((input & 0xf) & (1 << i));
+        in.insert(itr, ((input & 0xf) & (1 << i)));
+        itr++;
+    }
+    // std::cout << in.size() << std::endl;
+    assert(in.size() == 4);
+    // copy in to serial
+    serial.insert(serial.end(), in.begin(), in.end());
+    // std::cout << "serial: "<< serial << std::endl;
+    return 0;
+}
+
+int toSerial(std::vector<bool> &serial, int input, int bitsToWrite)
+{
+    // take in the input
+    // shift everything to the left
+    // write everything to a stream
+    // std::cout << "toSerial input: " << input << " bits to write: " << bitsToWrite << std::endl;
+    // std::cout << "serial: "<< serial << std::endl;
+
+    std::vector<bool> in;
+    std::vector<bool>::const_iterator itr = in.begin();
+    // in.reserve(4);
+    int count = 0;
+    // check
+    while (bitsToWrite > 0)
+    {
+        in.reserve(in.size() + 4);
+        itr = in.end();
+        // continuation bit
+        if (count != 0)
+        {
+            // in.push_back(1);
+            in.insert(itr, 1);
+            itr++;
+        }
+        else
+        {
+            // in.push_back(0);
+            in.insert(itr, 0);
+            itr++;
+        }
+        for (int i = 1; i < 4; ++i)
+        {
+            // std::cout << "cntr : " << ((input & 0xf) & (1 << i)) << std::endl;
+            // in.push_back((input & 0xf) & (1 << i));
+            in.insert(itr, ((input & 0xf) & (1 << i)));
+            itr++;
+        }
+        bitsToWrite -= 3;
+        input >>= 3;
+        count++;
+    }
+
+    // copy in to serial
+    serial.insert(serial.end(), in.begin(), in.end());
+    // std::cout << serial << std::endl;
+    return 0;
+}
+
+int fromSerialNibble(std::vector<bool> &nibble, int &val)
+{
+    // shift val
+    val <<= 3;
+    val += (nibble.at(1) << 2);
+    val += (nibble.at(2) << 1);
+    val += (nibble.at(3) << 0);
+    return nibble.at(0);
+}
+
+Entry<short> fromSerial(std::vector<bool> &serial, std::vector<bool>::const_iterator &sitr)
+{
+    // decode serial data - each run should contain the control, then optionally z, sv, c
+    std::vector<bool> control;
+    control.reserve(4);
+    Entry<short> entry;
+    int count = 0;
+    int cont = 0;
+
+    // ingest control
+    control.insert(control.begin(), sitr, sitr + 4);
+    sitr += 4;
+
+    // check that bit 0 is always 0 (or else something has gone horribly wrong)
+    // std::cout << "cntl: " << control << std::endl;
+    int z_ = entry.z_ = control.at(1);
+    int d_, l_ = entry.sv_ = control.at(2);
+    int c_ = entry.c_ = control.at(3);
+    // std::cout << entry << std::endl;
+    // assert(control.at(0) == 1);
+    if(control.at(0) == 1){
+        std::cout << "decompressing finished" << std::endl;
+        return entry;
+    }
+
+    // std::cout << serial << std::endl;
+    std::vector<bool> in;
+    in.reserve(4);
+    while (z_ || d_ || l_ || c_)
+    {
+        int val = 0;
+        // count = 0;
+        // ingest nibble (4 bits)
+        do
+        {
+            // in.reserve(in.size()+4);
+            sitr = in.insert(in.end(), sitr, sitr + 4);
+            // sitr += 4;
+            // see if you should keep going
+            cont = fromSerialNibble(in, val);
+            // now get data starting with z, then sv, then c
+            in.clear();
+            count++;
+        } while (cont);
+        if (z_)
+        {
+            entry.z = fromZigZag(val);
+            z_ = 0;
+        }
+        else if (d_)
+        {
+            entry.d = fromZigZag(val);
+            d_ = 0;
+        }
+        else if (l_)
+        {
+            entry.l = fromZigZag(val);
+            l_ = 0;
+        }
+        else if (c_)
+        {
+            entry.c = fromZigZag(val);
+            c_ = 0;
+        }
+    }
+
+    return entry;
+}
+
+int fromBits(std::deque<int> &output, int &buffer, int &bitsRead, long &out, int &first)
+{
+    // grab the 4th bit, if its a 1 keep going otherwise stop
+    int cont = 0;
+    // int out = 0;
+    // need to check if its the last buffer -> special case
+    // int first = 1;
+    do
+    {
+        if (first == 1)
+        {
+            // get number of empty bits
+            int sz = bitSize(buffer);
+            bitsRead = 32 - sz;
+            first = 0;
+            out = 0;
+        }
+        // buffer exhausted, get next one
+        if (bitsRead == 32)
+        {
+            output.pop_back();
+            buffer = output.back();
+            bitsRead = 0;
+        }
+        else if (bitsRead > 32)
+        {
+            std::cout << "bits Read > 32: " << bitsRead << " -> very bad" << std::endl;
+        }
+        out <<= 3;
+        cont = (buffer & 0x8);
+        out += (buffer & 0x7);
+        std::cout << std::bitset<32>(buffer & 0x7) << std::endl;
+        buffer >>= 4;
+        bitsRead += 4;
+
+    } while (cont || first);
+    if (bitsRead == 32)
+    {
+        output.pop_back();
+        buffer = output.back();
+        bitsRead = 0;
+    }
+    else if (bitsRead > 32)
+    {
+        std::cout << "bits Read > 32: " << bitsRead << " -> very bad" << std::endl;
+    }
+    std::cout << std::bitset<32>(out) << std::endl;
+    return out;
+    // reset to 0
+}
+
 template <typename T>
-int compressLZRVL(std::deque<T> &difDeque, char *output, int numPixels)
+int compressLZRVL(std::deque<T> &difDeque, std::vector<bool> &serialOut, int numPixels)
 {
     // compress with zero runs and LZ77
     // std::deque<short> difDeque(pixel_diffs.begin(), pixel_diffs.end());
@@ -639,18 +919,52 @@ int compressLZRVL(std::deque<T> &difDeque, char *output, int numPixels)
     int nibblesWritten = 0;
     // std::deque<T> serialized;
     int count = 0;
-    int bitsNeeded = 0;
+    int totalBits = 0;
+    int maxBits = 0;
     // std::bitset<4> bits{"0011"};
     long bits = 0;
+
+    // get total size of output to preallocate
+    typename std::deque<Entry<T>>::const_iterator itr = compressed.begin();
+    while (itr != compressed.end())
+    {
+        // for each entry, control will always take 4 bits
+        if (itr->z_)
+        {
+            totalBits += bitSize(toZigZag(itr->z));
+        }
+        if (itr->sv_)
+        {
+            totalBits += bitSize(toZigZag(itr->d));
+            totalBits += bitSize(toZigZag(itr->l));
+        }
+        if (itr->c_)
+        {
+            totalBits += bitSize(toZigZag(itr->c));
+        }
+        itr++;
+    }
+
+    // now allocate the output
+    std::vector<bool> serial;
+    serial.reserve(totalBits + 4); // extra 4 bits for terminating character 
+    // std::vector<bool>::const_iterator sitr = serial.begin();
+
     while (compressed.begin() != compressed.end())
     {
-
         // 2^16 * 2 -> ceil(17/3)*4 = 6*4 = 24 bits = 3 bytes at most
         // 4 * 3 bytes = 12 bytes = 4 ints * 3 + 3 bits
         Entry<T> entry = compressed.front();
+
         // 3 control = zeros subvec char
         // control will never be negative, so no need for zig zag
-        char control = (entry.z_ << 2) + (entry.sv_ << 1) + (entry.c_);
+        char control = 0x8 + (entry.z_ << 2) + (entry.sv_ << 1) + (entry.c_);
+        // std::cout << "z_ sv_ c_ : " <<  (entry.z_ << 2) << (entry.sv_ << 1)  << (entry.c_) << std::endl;
+        // std::cout << "cntl: " << control << std::endl;
+        // std::cout << "serial: " << serial << std::endl;
+
+        toSerial(serial, control);
+        // std::cout << "serial: " << serial << std::endl;
         // std::cout << control << std::endl;
 
         // if (count == 0)
@@ -675,47 +989,81 @@ int compressLZRVL(std::deque<T> &difDeque, char *output, int numPixels)
 
         if (entry.z_)
         {
-            EncodeVLE(toZigZag(entry.z), pBuffer, word, nibblesWritten); // run of zeros
-            if(count == 0){
-                std::cout << entry.z << "->" << toZigZag(entry.z) << "->" << bitSize(toZigZag(entry.z)) << std::endl;
-            }
-            bitsNeeded += bitSize(toZigZag(entry.z));
-            // EncodeVLE(int(entry.z), pBuffer, word, nibblesWritten); // run of zeros
+            // EncodeVLE(toZigZag(entry.z), pBuffer, word, nibblesWritten); // run of zeros
+            toSerial(serial, toZigZag(entry.z), ceil(log2(toZigZag(entry.z))));
+            // std::cout << serial << std::endl;
+            // if (count == 0)
+            // {
+            //     std::cout << entry.z << "->" << toZigZag(entry.z) << "->" << bitSize(toZigZag(entry.z)) << std::endl;
+            // }
         }
         if (entry.sv_)
         {
-
-            EncodeVLE(toZigZag(entry.d), pBuffer, word, nibblesWritten); // distance
-            EncodeVLE(toZigZag(entry.l), pBuffer, word, nibblesWritten); // length
-            if(count == 0){
-                std::cout << entry.d << "->" << toZigZag(entry.d) << "->" << bitSize(toZigZag(entry.d)) << std::endl;
-                std::cout << entry.l << "->" << toZigZag(entry.l) << "->" << bitSize(toZigZag(entry.l)) << std::endl;
-            }
-            bitsNeeded += bitSize(toZigZag(entry.d));
-            bitsNeeded += bitSize(toZigZag(entry.l));
-            // EncodeVLE(int(entry.d), pBuffer, word, nibblesWritten); // distance
-            // EncodeVLE(int(entry.l), pBuffer, word, nibblesWritten); // length
+            // EncodeVLE(toZigZag(entry.d), pBuffer, word, nibblesWritten); // distance
+            // EncodeVLE(toZigZag(entry.l), pBuffer, word, nibblesWritten); // length
+            toSerial(serial, toZigZag(entry.d), ceil(log2(toZigZag(entry.d))));
+            toSerial(serial, toZigZag(entry.l), ceil(log2(toZigZag(entry.l))));
+            // if (count == 0)
+            // {
+            //     std::cout << entry.d << "->" << toZigZag(entry.d) << "->" << bitSize(toZigZag(entry.d)) << std::endl;
+            //     std::cout << entry.l << "->" << toZigZag(entry.l) << "->" << bitSize(toZigZag(entry.l)) << std::endl;
+            // }
         }
         if (entry.c_)
         {
             // the character (delta) can be between -2^16/2 to 2^16/2
-            EncodeVLE(toZigZag(entry.c), pBuffer, word, nibblesWritten); // char
-            if(count == 0){
-                std::cout << entry.c << "->" << toZigZag(entry.c) << "->" << bitSize(toZigZag(entry.c)) << std::endl;
-            }
-            bitsNeeded += bitSize(toZigZag(entry.c));
-            // EncodeVLE(int(entry.c), pBuffer, word, nibblesWritten); // char
+            // EncodeVLE(toZigZag(entry.c), pBuffer, word, nibblesWritten); // char
+            toSerial(serial, toZigZag(entry.c), ceil(log2(toZigZag(entry.c))));
+            // if (count == 0)
+            // {
+            //     std::cout << entry.c << "->" << toZigZag(entry.c) << "->" << bitSize(toZigZag(entry.c)) << std::endl;
+            // }
         }
-        if (nibblesWritten)
-        { // last few values
-            pBuffer.push_back(word << 4 * (8 - nibblesWritten));
-            // *pBuffer++ = word << 4 * (8 - nibblesWritten);
-        }
-        if(bitsNeeded > 32){
-            std::cout << "bits needed: (+4) " << bitsNeeded << " > 32 -> very BAD" << std::endl;
-        }
-        if (count == 0)
-        {
+        // std::cout << count << std::endl;
+        // if (count == 0)
+        // {
+            // toBits(std::deque<int> &output, int &buffer, int &bitsWritten, int input, int bitsToWrite)
+
+            // int b = 0;
+            // int bitsWritten = 0;
+            // int bitsToWrite = 0;
+            // int bitsRead = 0;
+            // long out = 0;
+            // int first = 1;
+            // int toSerial(std::vector<bool> &serial, std::vector<bool>::const_iterator &sitr, int &input, int &bitsToWrite)
+            // std::cout << control << std::endl;
+            // toSerial(serial, sitr, control, ceil(log2(control)));
+            // std::cout << serial << std::endl;
+            // toSerial(serial, sitr, 47, ceil(log2(47)));
+            // std::cout << serial << std::endl;
+
+            // std::vector<bool>::const_iterator sitr = serial.begin();
+            // std::cout << entry << std::endl;
+            // std::cout << fromSerial(serial, sitr) << std::endl;
+            // std::cout << serial << std::endl;
+
+            // std::cout << "tests " << std::endl;
+            // toSerial(serial, 0x07);
+            // toSerial(serial, toZigZag(47), ceil(log2(toZigZag(47))));
+            // toSerial(serial, toZigZag(100), ceil(log2(toZigZag(100))));
+            // toSerial(serial, toZigZag(69), ceil(log2(toZigZag(69))));
+            // toSerial(serial, toZigZag(2), ceil(log2(toZigZag(2))));
+            // // sitr = serial.begin();
+            // std::cout << fromSerial(serial, sitr) << std::endl;
+
+            // toBits(pBuffer, b, bitsWritten, 1009872247, ceil(log2(1009872247)));
+            // toBits(pBuffer, b, bitsWritten, 1100000000, ceil(log2(1100000000)));
+            // toBits(pBuffer, b, bitsWritten, 2200000000, ceil(log2(2200000000)));
+            // toBits(pBuffer, b, bitsWritten, 3300000000, ceil(log2(3300000000)));
+            // std::cout << "encoding done " << std::endl;
+            // // flushing buffer
+            // pBuffer.push_back(b);
+            // b = pBuffer.back();
+            // std::cout << fromBits(pBuffer, b, bitsRead, out, first) << std::endl;
+            // std::cout << fromBits(pBuffer, b, bitsRead, out, first) << std::endl;
+            // std::cout << fromBits(pBuffer, b, bitsRead, out, first) << std::endl;
+            // std::cout << fromBits(pBuffer, b, bitsRead, out, first) << std::endl;
+            // std::cout << std::bitset<32>(((42) & 0x7)+0x8) << std::endl;
             // std::cout << "bits needed: (+4) " << bitsNeeded << std::endl;
             // std::cout << entry.z_ << entry.sv_ << entry.c_ << std::endl;
             // std::cout << std::bitset<3>(control) << std::endl;
@@ -742,10 +1090,20 @@ int compressLZRVL(std::deque<T> &difDeque, char *output, int numPixels)
             // std::cout << DecodeVLE(pBuffer, word, nibblesWritten) << std::endl;
             // std::cout << DecodeVLE(pBuffer, word, nibblesWritten) << std::endl;
             // std::cout << DecodeVLE(pBuffer, word, nibblesWritten) << std::endl;
-        }
+        // }
+        
+        serialOut.insert(serialOut.end(), serial.begin(), serial.end());
+        std::vector<bool>::const_iterator sitr = serial.begin();
+        // std::cout << fromSerial(serial, sitr) << std::endl;
         compressed.pop_front();
         count++;
     }
+    // now that the whole file has been encoded, add terminating character ie cntl = 1000
+    // int toSerial(std::vector<bool> &serial, char input);
+    char termChar = 0x8;
+    toSerial(serialOut, termChar);
+    
+    // std::cout << "average bits needed: " << float(totalBits) / float(count) << std::endl;
     // pBuffer now contains all serialized data
     // now transfer serialized data to chars
 
@@ -793,6 +1151,10 @@ int compressLZRVL(std::deque<T> &difDeque, char *output, int numPixels)
 
     // return int((char *)pBuffer - (char *)buffer); // num bytes
     return 0;
+}
+
+int decompressLZRVL(std::deque<T> &out, std::vector<bool> &serialOut){
+    
 }
 
 Result run_trvl(InputFile &input_file, short change_threshold, int invalidation_threshold)
@@ -894,7 +1256,9 @@ Result run_trvl(InputFile &input_file, short change_threshold, int invalidation_
             // Compress the difference.
             std::deque<short> difDeque(pixel_diffs.begin(), pixel_diffs.end());
             std::vector<char> output(5 * frame_size);
-            compressLZRVL(difDeque, output.data(), frame_size);
+            std::vector<bool> serialOut;
+            serialOut.reserve(5*frame_size*8);
+            compressLZRVL(difDeque, serialOut, frame_size);
             compression_time_sum += compression_timer.milliseconds();
 
             // output.resize(size);
