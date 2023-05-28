@@ -174,7 +174,7 @@ set_target_properties(trvlTest PROPERTIES
 CXX_STANDARD 17
 )
 target_compile_options(trvlTest PUBLIC
-  "-O3"
+  "-O9"
   #"-ggdb"
   #"-lstdc++"
   )
