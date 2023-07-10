@@ -368,8 +368,8 @@ template <typename T>
 int compLZ77(const std::deque<T> &inputDeque, std::deque<Entry<T>> &outBuf)
 {
     // reference: https://en.wikipedia.org/wiki/LZ77_and_LZ78#Pseudocode
-    int searchWindow = 100;
-    int lookWindow = 5;
+    int searchWindow = 1000;
+    int lookWindow = 25;
 
     if (searchWindow > inputDeque.size())
     {
@@ -735,18 +735,9 @@ int compressLZRVL(std::deque<T> &pixel_diffs, std::vector<bool> &serialized)
     std::deque<Entry<T>> compressed;
     compLZ77(pixel_diffs, compressed);
 
-    // std::cout << compressed << std::endl;
-
     // now allocate the output
     std::vector<bool> serial;
-    // serial.reserve(126038500);
-
-    // compression size without lz77
-    // for(int i = 0; i < pixel_diffs.size(); i++){
-    //     toSerial(serialized, pixel_diffs[i]);
-    // }
-    // std::cout << "pixel diff  size: " << pixel_diffs.size() << std::endl;
-    // std::cout << "pixel diff serial size: " << serialized.size() << std::endl;
+    serial.reserve(126038500);
 
     while (compressed.begin() != compressed.end())
     {
@@ -800,7 +791,7 @@ int decompressLZRVL(std::deque<short> &decompressed, std::vector<bool> &serializ
     return 1;
 }
 
-Result run_lztrvl(InputFile &input_file, short change_threshold, int invalidation_threshold)
+Result run_trvl(InputFile &input_file, short change_threshold, int invalidation_threshold)
 {
     int frame_size = input_file.width() * input_file.height();
     // std::cout << "width \t" << input_file.width() << "\t";
@@ -839,9 +830,7 @@ Result run_lztrvl(InputFile &input_file, short change_threshold, int invalidatio
         // }
         for (int i = 0; i < frame_size; ++i)
         {
-            // trvl_pixels[i].value = depth_buffer[i];
             trvl::update_pixel(trvl_pixels[i], depth_buffer[i], change_threshold, invalidation_threshold);
-            // trvl::update_pixel(trvl_pixels[i], depth_buffer[i], 20, 5);
         }
 
 
@@ -896,6 +885,7 @@ Result run_lztrvl(InputFile &input_file, short change_threshold, int invalidatio
     int success = decompressLZRVL(finalDecompression, serialized);
     float decompression_time_sum = decompression_timer.milliseconds();
     std::cout << "decompression finished" << std::endl;
+
     std::cout << std::endl;
     if (check(allPixelDiffs, finalDecompression))
     {
@@ -910,7 +900,7 @@ Result run_lztrvl(InputFile &input_file, short change_threshold, int invalidatio
 
     float average_compression_time = compression_time_sum / frame_count;
     float average_decompression_time = decompression_time_sum / frame_count;
-    std::cout << "LZ Temporal RVL" << std::endl
+    std::cout << "Temporal RVL" << std::endl
               << "filename: " << input_file.filename() << std::endl
               << "average compression time: " << average_compression_time << " ms" << std::endl
               << "average decompression time: " << average_decompression_time << " ms" << std::endl;
@@ -923,163 +913,6 @@ Result run_lztrvl(InputFile &input_file, short change_threshold, int invalidatio
     std::cout << "total compressed size (diff + (RVL)keyframe) = " << serialized.size() + rvl_frame.size() * sizeof(char) * 8 << std::endl;
     std::cout << "overall average compression ratio (diff + (RVL)keyframe))= in / out = " << float(allPixelDiffs.size() * sizeof(short) * 8 + frame_size * sizeof(short) * 8) / float(serialized.size() + rvl_frame.size() * sizeof(char) * 8) << std::endl;
     return Result(average_compression_time, average_decompression_time, 0, 0);
-}
-
-Result run_trvl(InputFile &input_file, short change_threshold, int invalidation_threshold)
-{
-    int frame_size = input_file.width() * input_file.height();
-    // std::cout << "width \t" << input_file.width() << "\t";
-    // std::cout << "height \t" << input_file.height() << "\t";
-
-    int depth_buffer_size = frame_size * sizeof(short);
-    std::cout << depth_buffer_size << std::endl;
-    // std::cout << "depth buffer size \t" << depth_buffer_size << "\t";
-    // For the raw pixels from the input file.
-    std::vector<short> depth_buffer(frame_size);
-    // For detecting changes and freezing other pixels.
-    std::vector<trvl::Pixel> trvl_pixels(frame_size);
-    // To save the pixel values of the previous frame to calculate differences between the previous and the current.
-    std::vector<short> prev_pixel_values(frame_size);
-    // The differences between the adjacent frames.
-    std::vector<short> pixel_diffs(frame_size);
-    // For the RVL compressed frame.
-    std::vector<char> rvl_frame;
-    // For the decompressed frame.
-    std::vector<short> depth_image;
-
-    float compression_time_sum = 0.0f;
-    float decompression_time_sum = 0.0f;
-    int compressed_size_sum = 0;
-    float psnr_sum = 0.0f;
-    int zero_psnr_frame_count = 0;
-    int frame_count = 0;
-
-    // TODO: why is this reading 101 frames when it should read 100?
-    // int total_sum = 0;
-    std::ofstream diff_output("/home/sc/streamingPipeline/analysisData/diff.txt");
-    // std::ifstream abc("/home/sc/streamingPipeline/analysisData/ref/allDepthBin_1",std::ios::in | std::ios::binary);
-    // while ((!input_file.input_stream().eof()))
-    // while ((abc.read((char *)(depth_buffer.data()), depth_buffer_size)))
-    while ((input_file.input_stream().read((char *)(depth_buffer.data()), depth_buffer_size)))
-    {
-        // for(int i = 1000; i < 1010; i++){
-        //     std::cout << depth_buffer[i] << " ";
-        // }
-        // std::cout << frame_count << std::endl;
-        // input_file.input_stream().read(reinterpret_cast<char *>(depth_buffer.data()), depth_buffer_size);
-        // input_file.input_stream().read(pixel_diffs_char, depth_buffer_size);
-        Timer compression_timer;
-        // total_sum += depth_buffer.size();
-        // std::cout << depth_buffer.size() << std::endl;
-        // Update the TRVL pixel values with the raw depth pixels.
-        for (int i = 0; i < frame_size; ++i)
-        {
-            trvl::update_pixel(trvl_pixels[i], depth_buffer[i], change_threshold, invalidation_threshold);
-        }
-
-        // std::cout << "depth buffer\t" << depth_buffer_size << "\t";
-        // std::cout << "frame size \t" << frame_size << "\t";
-        // For the first frame, since there is no previous frame to diff, run vanilla RVL.
-        if (frame_count == 0)
-        {
-            for (int i = 0; i < frame_size; ++i)
-            {
-                prev_pixel_values[i] = trvl_pixels[i].value;
-            }
-            rvl_frame = rvl::compress(prev_pixel_values.data(), frame_size);
-            std::cout << "trvl frame size \t" << rvl_frame.size() << "\t";
-            compression_time_sum += compression_timer.milliseconds();
-
-            Timer decompression_timer;
-            depth_image = rvl::decompress(rvl_frame.data(), frame_size);
-            // std::cout << "created depth image " << std::endl;
-            decompression_time_sum += decompression_timer.milliseconds();
-        }
-        else
-        {
-            // Calculate pixel_diffs using prev_pixel_values
-            // and save current pixel values to prev_pixel_values for the next frame.
-            for (int i = 0; i < frame_size; ++i)
-            {
-                short value = trvl_pixels[i].value;
-                pixel_diffs[i] = value - prev_pixel_values[i];
-                // if (frame_count == 2)
-                // {
-                    diff_output << pixel_diffs[i] << ",";
-                // }
-                // std::cout  << value << ",";
-                // std::cout << value - prev_pixel_values[i] << " ";
-
-                prev_pixel_values[i] = value;
-                // if(pixel_diffs[i] != 0){
-                //     std::cout << pixel_diffs[i] << " " ;
-                // }
-            }
-            // std::cout << frame_count << std::endl;
-            if (frame_count == 2)
-            {
-                // diff_output << "\n";
-            }
-
-            // Compress and decompress the difference.
-
-            // rvl_frame = rvl::compress(pixel_diffs.data(), frame_size);
-            rvl_frame = rvl::compress(pixel_diffs.data(), frame_size);
-            compression_time_sum += compression_timer.milliseconds();
-
-            Timer decompression_timer;
-            auto diff_frame = rvl::decompress(rvl_frame.data(), frame_size);
-            // Update depth_image of the previous frame using the difference
-            // between the previous frame and the current frame.
-            for (int i = 0; i < frame_size; ++i)
-            {
-                depth_image[i] += diff_frame[i];
-            }
-            decompression_time_sum += decompression_timer.milliseconds();
-        }
-
-        auto depth_mat = create_depth_mat(input_file.width(), input_file.height(), depth_image.data());
-
-        // char outPath[1024 * 2] = {0};
-        // sprintf(outPath, "/home/sc/streamingPipeline/analysisData/trvl/%d.png", frame_count);
-        // std::cout << outPath << std::endl;
-        // cv::imwrite(outPath, depth_mat);
-        // cv::imshow("Depth", depth_mat);
-        // cv::imwrite(outPath, depth_mat);
-        // if (cv::waitKey(1) >= 0)
-        //     break;
-
-        compressed_size_sum += rvl_frame.size();
-        // std::cout << "trvl frame size \t" << rvl_frame.size() << "\t";
-        // The first frame goes through vanilla RVL which is lossless.
-        float mse_value = mse(depth_buffer, depth_image);
-        // std::cout << mse_value << std::endl;
-        if (mse_value != 0.0f)
-        {
-            psnr_sum += 20.0f * log10(max(depth_buffer) / sqrt(mse_value));
-        }
-        else
-        {
-            ++zero_psnr_frame_count;
-        }
-        ++frame_count;
-    }
-    input_file.input_stream().close();
-    diff_output.close();
-    // std::cout << total_sum << std::endl;
-
-    float average_compression_time = compression_time_sum / frame_count;
-    float average_decompression_time = decompression_time_sum / frame_count;
-    float compression_ratio = (depth_buffer_size * frame_count) / (float)compressed_size_sum;
-    float average_psnr = (frame_count > zero_psnr_frame_count) ? psnr_sum / (frame_count - zero_psnr_frame_count) : 0.0f;
-    std::cout << "Temporal RVL" << std::endl
-              << "filename: " << input_file.filename() << std::endl
-              << "average compression time: " << average_compression_time << " ms" << std::endl
-              << "average decompression time: " << average_decompression_time << " ms" << std::endl
-              << "compression ratio: " << compression_ratio << std::endl
-              << "average PSNR: " << average_psnr << std::endl;
-
-    return Result(average_compression_time, average_decompression_time, compression_ratio, average_psnr);
 }
 
 int main(int argc, char **argv)
@@ -1120,20 +953,12 @@ int main(int argc, char **argv)
     // if (APPEND == 1)
     // {
     //     std::ofstream result_output(RESULT_OUTPUT_FILE_PATH, std::ios::app);
-    // CHANGE_THRESHOLD = 10;
-    // INVALIDATION_THRESHOLD = 2;
-    CHANGE_THRESHOLD = 0;
-    INVALIDATION_THRESHOLD = 0;
-
-    if(TRVL == 1){
-        Result trvl_result(run_lztrvl(input_file, CHANGE_THRESHOLD, INVALIDATION_THRESHOLD));
-    }
-    else if (TRVL == 2)
+    if (TRVL == 1)
     {
         // reset_input_file(input_file);
         Result trvl_result(run_trvl(input_file, CHANGE_THRESHOLD, INVALIDATION_THRESHOLD));
     }
-    else if(TRVL == 0)
+    else
     {
         Result rvl_result(run_rvl(input_file));
     }
